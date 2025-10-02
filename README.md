@@ -6,7 +6,8 @@ Repositório dedicado ao projeto da matéria "Compiladores".
 # Colaboradores
 
 * Kauê Patricius Montgomery Maranhão da Costa Montenegro
-* Walber Luis Santos da Paixão 
+* Walber Luis Santos da Paixão
+* Gustavo Pereira Cordeiro
 
 
 # Objetivos
