@@ -7,3 +7,7 @@ Repositório dedicado ao projeto da matéria "Compiladores".
 
 * Kauê Patricius Montgomery Maranhão da Costa Montenegro
 * INSIRA SEU NOME AQUI
+
+
+# Objetivos
+Nosso objetivo atualmente consiste em apresentar a atividade 2 - Apresentaremos o parser, o lexer e o código de três endereços, juntamente com o assembly gerado.
