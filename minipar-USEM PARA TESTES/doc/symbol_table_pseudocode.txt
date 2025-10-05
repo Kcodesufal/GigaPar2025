@@ -1,0 +1,1 @@
+Pseudocode for Symbol Table: simple map of variable names to storage entries.
