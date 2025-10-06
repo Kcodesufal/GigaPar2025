@@ -1,0 +1,1 @@
+<def> <id, main> <(> <)> <:> <print> <(> <string, "Hello World!"> <)> <c_channel> <(> <string, "Isso é só um teste pra ver se o tipo está funcionando corretamente."> <)>
