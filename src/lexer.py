@@ -1,9 +1,10 @@
 import re
 
 # Palavras-chave da linguagem
-KEYWORDS = {"if", "else", "while", "for", "print", "elif", "def", "c_channel"} 
+KEYWORDS = {"if", "else", "while", "for", "print", "elif", "def", "c_channel", "SEQ", "PAR"} 
 #Note como c_channel está aqui pois creio que SEMPRE irá requerir declaração explícita para seu uso. Podemos fazer o mesmo com int, String e outros tipos, caso necessário 
 # ou requisitado pelo professor.
+# A implementação de SEQ ou PAR pode ou não estar correta. Aguardo revisão.
 
 # Expressões regulares para cada tipo de token
 TOKEN_REGEX = [
