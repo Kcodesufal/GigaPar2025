@@ -1,18 +1,18 @@
 import re
 
 # Palavras-chave da linguagem
-KEYWORDS = {"if", "else", "while", "for", "print", "elif", "def", "c_channel", "SEQ", "PAR"}
+KEYWORDS = {"if", "else", "while", "for", "print", "elif", "def", 
+            "c_channel", "SEQ", "PAR", "and", "or", "not", "True", "False"}
 
 # Expressões regulares para cada tipo de token
 TOKEN_REGEX = [
-    ("NUM", r"\b\d+(\.\d+)?\b"),           # números inteiros ou decimais
-    ("BOOL", r"\b(True|False)\b"),
-    ("ID", r"\b[a-zA-Z_]\w*\b"),           # identificadores
-    ("OP", r"==|<=|>=|!=|=|\+|-|\*|/|<|>"),  # operadores
-    ("SYM", r"[{}();:]"),                  # símbolos individuais
-    ("STR", r'"([^"\\]|\\.)*"')            # strings
+    ("NUM", r"\b\d+(\.\d+)?\b"),                    # números inteiros ou decimais
+    ("BOOL", r"\b(True|False)\b"),                  # valores booleanos
+    ("ID", r"\b[a-zA-Z_]\w*\b"),                   # identificadores
+    ("OP", r"==|!=|<=|>=|=|\+|-|\*|/|<|>"),        # operadores aritméticos, comparação
+    ("SYM", r"[{}();:,]"),                          # símbolos individuais
+    ("STR", r'"([^"\\]|\\.)*"')                     # strings
 ]
-
 
 def lexer(code):
     """
@@ -33,8 +33,12 @@ def lexer(code):
             match = regex.match(code, pos)
             if match:
                 value = match.group(0)
+                # Identifica palavras-chave e booleanos
                 if token_type == "ID" and value in KEYWORDS:
-                    tokens.append(("KEYWORD", value))
+                    if value in {"True", "False"}:
+                        tokens.append(("BOOL", value))
+                    else:
+                        tokens.append(("KEYWORD", value))
                 else:
                     tokens.append((token_type, value))
                 pos = match.end(0)
@@ -45,12 +49,9 @@ def lexer(code):
 
     return tokens
 
-
 def write_tokens_to_file(tokens, filename="tokens.txt"):
     """
     Recebe a lista de tokens estruturados e grava no arquivo em formato legível.
-    Exemplo de saída:
-    <if> <id, x> <=> <num, 10>
     """
     formatted_tokens = []
 

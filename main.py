@@ -13,8 +13,10 @@ def main():
 
     print("✅ Tokens gerados em 'tokens.txt'")
 
+    p = parser.Parser(tokens)
+    ast = p.parse()
 
-    # parser.parse(tokens)
+    print("✅ Análise sintática concluída com sucesso!")
 
 
 if __name__ == "__main__":

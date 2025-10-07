@@ -1,147 +1,241 @@
-from abc import ABC, abstractmethod
+from typing import List, Tuple, Any
 
-STATEMENT_TOKENS = {
-    'if': 'if_statement',
-    'else': 'else_statement',
-    'while': 'while_statement',
-    'for': 'for_statement',
-    'print': 'print_statement',
-    'elif': 'elif_statement',
-    'def': 'def_statement',
-    'c_channel': 'c_channel_statement',
-    'SEQ': 'seq_statement',
-    'PAR': 'par_statement',
-}
+class ParserError(Exception):
+    """Erro sintático genérico."""
+    pass
 
-class Parser(ABC):
-    """
-    Interface base para o parser.
-    Define os métodos abstratos que devem ser implementados.
-    """
-
-    @abstractmethod
-    def match(self, expected):
-        """
-        Verifica se o token atual corresponde ao esperado.
-        Args:
-            expected: Token esperado
-        Raises:
-            SyntaxError: Se o token não corresponder ao esperado
-        """
-        pass
-
-    @abstractmethod
-    def parse(self):
-        """
-        Método principal que inicia o processo de parsing.
-        Retorna a AST (Abstract Syntax Tree).
-        """
-        pass
-
-class ParserImpl(Parser):
-    """
-    Implementação concreta do Parser.
-    Contém apenas as funções básicas necessárias para o funcionamento inicial.
-    """
-    def __init__(self, tokens):
+class Parser:
+    def __init__(self, tokens: List[Tuple[str, Any]]):
         self.tokens = tokens
-        self.current = 0
-        self.current_token = None
-        self.next_token()
+        self.pos = 0
 
-    def next_token(self):
-        if self.current < len(self.tokens):
-            self.current_token = self.tokens[self.current]
-            self.current += 1
-        else:
-            self.current_token = None
-        return self.current_token
+    # ===========================
+    # Utilitários
+    # ===========================
+    def current_token(self):
+        return self.tokens[self.pos] if self.pos < len(self.tokens) else ("EOF", None)
 
-    def peek_token(self):
-        if self.current < len(self.tokens):
-            return self.tokens[self.current]
-        return None
+    def peek(self, n=1):
+        idx = self.pos + n
+        return self.tokens[idx] if idx < len(self.tokens) else ("EOF", None)
 
-    def match(self, expected):
-        if self.current_token == expected:
-            token = self.current_token
-            self.next_token()
-            return token
-        raise SyntaxError(f"Expected {expected}, got {self.current_token}")
+    def eat(self, expected_type, expected_value=None):
+        ttype, value = self.current_token()
+        if ttype == expected_type and (expected_value is None or value == expected_value):
+            self.pos += 1
+            return value
+        raise ParserError(f"Erro sintático: esperado {expected_type} '{expected_value}', encontrado {ttype} '{value}'")
 
+    def accept(self, expected_type, expected_value=None):
+        ttype, value = self.current_token()
+        if ttype == expected_type and (expected_value is None or value == expected_value):
+            self.pos += 1
+            return True
+        return False
+
+    # ===========================
+    # Ponto de entrada
+    # ===========================
     def parse(self):
-        """
-        Implementação básica do parse que cria a estrutura inicial da AST
-        """
-        program = {
-            "type": "program",
-            "statements": []
-        }
-        
-        while self.current_token is not None:
-            stmt = self.statement()
-            if stmt:
-                program["statements"].append(stmt)
-        
-        return program
+        node = self.programa_minipar()
+        if self.current_token()[0] != "EOF":
+            raise ParserError("Tokens restantes após o fim do programa.")
+        return node
 
-    def statement(self):
-        """
-        Implementação básica para parsing de statements
-        """
+    # ===========================
+    # Produções principais
+    # ===========================
+    def programa_minipar(self):
+        return ("programa_minipar", self.bloco_stmt())
 
-        # implementar o switch case para cada tipo de statement 
-        if self.current_token in STATEMENT_TOKENS:
-            return {
-                "type": STATEMENT_TOKENS[self.current_token],
-                "token": self.current_token
-            }
-        elif self.current_token and self.current_token.startswith("<id"):
-            return self.assignment()
-        
-        raise SyntaxError(f"Unexpected token in statement: {self.current_token}")
+    def bloco_stmt(self):
+        ttype, value = self.current_token()
+        if (ttype, value) == ("KEYWORD", "SEQ"):
+            return self.bloco_SEQ()
+        elif (ttype, value) == ("KEYWORD", "PAR"):
+            return self.bloco_PAR()
+        else:
+            return self.stmts()
 
-    def expression(self):
-        """
-        Implementação básica para parsing de expressões
-        """
-        # Por enquanto, apenas identificamos expressões simples
-        token = self.current_token
-        if token.startswith(("<num", "<id", "<string", "<bool")):
-            self.next_token()
-            return {
-                "type": "expression",
-                "value": token
-            }
-        raise SyntaxError(f"Invalid expression: {token}")
+    def bloco_SEQ(self):
+        self.eat("KEYWORD", "SEQ")
+        return ("SEQ", self.stmts())
 
-    def assignment(self):
-        """
-        Implementação básica para parsing de atribuições
-        """
-        identifier = self.current_token
-        self.next_token()
-        
-        if self.current_token != "<=>":
-            raise SyntaxError(f"Expected '=', got {self.current_token}")
-        
-        self.next_token()
-        value = self.expression()
-        
-        return {
-            "type": "assignment",
-            "identifier": identifier,
-            "value": value
-        }
+    def bloco_PAR(self):
+        self.eat("KEYWORD", "PAR")
+        return ("PAR", self.stmts())
 
-# Função auxiliar para uso do parser
-def parse(tokens):
-    """
-    Função auxiliar que cria e executa o parser
-    Args:
-        tokens: Lista de tokens gerada pelo lexer
-    Returns:
-        AST gerada pelo parser
-    """
-    parser = ParserImpl(tokens)
-    return parser.parse()
+    def stmts(self):
+        stmts_list = []
+        while True:
+            ttype, value = self.current_token()
+            if ttype in {"EOF", "SYM"} and value in {")", "}"}:
+                break
+            if ttype in {"ID", "KEYWORD"}:
+                before = self.pos
+                stmts_list.append(self.stmt())
+                if self.pos == before:
+                    raise ParserError("Erro interno: stmt não consumiu tokens.")
+                continue
+            break
+        return ("stmts", stmts_list)
+
+    # ===========================
+    # Tipos de comandos
+    # ===========================
+    def stmt(self):
+        ttype, value = self.current_token()
+        if ttype == "ID":
+            nxt = self.peek(1)
+            if nxt[1] == "=":
+                return self.atribuicao()
+            elif nxt[1] == "(":
+                return self.func_call()
+            else:
+                raise ParserError(f"Erro após identificador '{value}': esperado '=' ou '('.")
+        elif ttype == "KEYWORD":
+            if value == "if":
+                return self.if_stmt()
+            elif value == "while":
+                return self.while_stmt()
+            elif value == "c_channel":
+                return self.c_channel_decl()
+            elif value == "def":
+                return self.function_def()
+            elif value in ("SEQ", "PAR"):
+                return self.bloco_stmt()
+            elif value in ("print", "input"):
+                return self.func_call_keyword(value)
+            else:
+                raise ParserError(f"Comando desconhecido: '{value}'")
+        else:
+            raise ParserError(f"Token inesperado: {ttype}, {value}")
+
+    def atribuicao(self):
+        id_name = self.eat("ID")
+        self.eat("OP", "=")
+        expr_node = self.expr()
+        return ("atrib", id_name, expr_node)
+
+    def if_stmt(self):
+        self.eat("KEYWORD", "if")
+        self.eat("SYM", "(")
+        cond = self.expr()
+        self.eat("SYM", ")")
+        self.eat("SYM", ":")  # ':' obrigatório
+        true_block = self.stmts()
+        if self.current_token() == ("KEYWORD", "else"):
+            self.eat("KEYWORD", "else")
+            self.eat("SYM", ":")
+            false_block = self.stmts()
+            return ("if_else", cond, true_block, false_block)
+        return ("if", cond, true_block)
+
+    def while_stmt(self):
+        self.eat("KEYWORD", "while")
+        self.eat("SYM", "(")
+        cond = self.expr()
+        self.eat("SYM", ")")
+        self.eat("SYM", ":")
+        body = self.stmts()
+        return ("while", cond, body)
+
+    def func_call(self):
+        func_name = self.eat("ID")
+        self.eat("SYM", "(")
+        args = []
+        while not (self.current_token()[0] == "SYM" and self.current_token()[1] == ")"):
+            if self.current_token()[0] == "EOF":
+                raise ParserError("Esperado ')' para encerrar chamada de função.")
+            args.append(self.expr())
+        self.eat("SYM", ")")
+        return ("func_call", func_name, args)
+
+    def func_call_keyword(self, func_name):
+        self.eat("KEYWORD", func_name)
+        self.eat("SYM", "(")
+        args = []
+        while not (self.current_token()[0] == "SYM" and self.current_token()[1] == ")"):
+            if self.current_token()[0] == "EOF":
+                raise ParserError(f"Esperado ')' após chamada de função {func_name}.")
+            args.append(self.expr())
+        self.eat("SYM", ")")
+        return ("func_call", func_name, args)
+
+    def function_def(self):
+        self.eat("KEYWORD", "def")
+        name = self.eat("ID")
+        self.eat("SYM", "(")
+        params = []
+        while not (self.current_token()[0] == "SYM" and self.current_token()[1] == ")"):
+            if self.current_token()[0] == "EOF":
+                raise ParserError("Esperado ')' ao final dos parâmetros da função.")
+            params.append(self.eat("ID"))
+        self.eat("SYM", ")")
+        self.eat("SYM", ":")
+        body = self.stmts()
+        return ("def", name, params, body)
+
+    def c_channel_decl(self):
+        self.eat("KEYWORD", "c_channel")
+        channel = self.eat("ID")
+        comp1 = self.eat("ID")
+        comp2 = self.eat("ID")
+        return ("c_channel", channel, comp1, comp2)
+
+    # ===========================
+    # Expressões
+    # ===========================
+    def expr(self):
+        return self.or_expr()
+
+    def or_expr(self):
+        node = self.and_expr()
+        while self.current_token() == ("KEYWORD", "or"):
+            self.eat("KEYWORD", "or")
+            node = ("or", node, self.and_expr())
+        return node
+
+    def and_expr(self):
+        node = self.compare_expr()
+        while self.current_token() == ("KEYWORD", "and"):
+            self.eat("KEYWORD", "and")
+            node = ("and", node, self.compare_expr())
+        return node
+
+    def compare_expr(self):
+        node = self.add_expr()
+        while self.current_token()[0] == "OP" and self.current_token()[1] in {"==", "!=", "<", ">", "<=", ">="}:
+            op = self.eat("OP")
+            node = ("binop", op, node, self.add_expr())
+        return node
+
+    def add_expr(self):
+        node = self.mul_expr()
+        while self.current_token()[0] == "OP" and self.current_token()[1] in {"+", "-"}:
+            op = self.eat("OP")
+            node = ("binop", op, node, self.mul_expr())
+        return node
+
+    def mul_expr(self):
+        node = self.factor()
+        while self.current_token()[0] == "OP" and self.current_token()[1] in {"*", "/"}:
+            op = self.eat("OP")
+            node = ("binop", op, node, self.factor())
+        return node
+
+    def factor(self):
+        ttype, value = self.current_token()
+        if ttype in {"NUM", "ID", "BOOL", "STR"}:
+            self.pos += 1
+            return (ttype, value)
+        elif (ttype, value) == ("KEYWORD", "not"):
+            self.eat("KEYWORD", "not")
+            return ("not", self.factor())
+        elif (ttype, value) == ("SYM", "("):
+            self.eat("SYM", "(")
+            node = self.expr()
+            self.eat("SYM", ")")
+            return node
+        else:
+            raise ParserError(f"Fator inesperado: {ttype}, {value}")

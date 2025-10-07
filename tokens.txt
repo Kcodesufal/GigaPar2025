@@ -1,1 +1,1 @@
-<def> <id, main> <(> <)> <:> <print> <(> <str, "Hello World!"> <)> <c_channel> <(> <str, "Isso é só um teste pra ver se o tipo está funcionando corretamente."> <)> <if> <c_channel> <==> <bool, True> <:> <print> <(> <str, "ok thanks"> <)>
+<def> <id, main> <(> <)> <:> <print> <(> <str, "Hello World!"> <)> <c_channel> <id, nossa> <id, funciona> <id, mesmo> <if> <(> <id, nossa> <>> <num, 10> <and> <id, pedrinho> <<> <num, 5> <)> <:> <{> <c_channel> <id, pedrinho> <id, c1> <id, c2> <}>
