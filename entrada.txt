@@ -1,3 +1,5 @@
 def main(): 
     print("Hello World!")
     c_channel("Isso é só um teste pra ver se o tipo está funcionando corretamente.")
+    if c_channel == True:
+        print("ok thanks")

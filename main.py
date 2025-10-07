@@ -1,23 +1,20 @@
 import src.lexer as lexer
 import src.parser as parser
 
-
-
-def main(): # Há duas opções para main: Recebemos o código a ser tokenizado via um arquivo ou via o terminal. 
-    # Também é possível fazê-lo por meio de uma interface gráfica, o que pode colaborar com a nota (fiquem atentos nisso!)
-
-        # Ler código de entrada
+def main():
     with open("entrada.txt", "r", encoding="utf-8") as f:
         code = f.read()
 
+    # Agora lexer retorna tokens estruturados
     tokens = lexer.lexer(code)
 
-    # Salvar saída formatada
-    with open("tokens.txt", "w", encoding="utf-8") as f:
-        f.write(" ".join(tokens))
+    # Função separada para escrita
+    lexer.write_tokens_to_file(tokens)
 
     print("✅ Tokens gerados em 'tokens.txt'")
 
+
+    # parser.parse(tokens)
 
 
 if __name__ == "__main__":
