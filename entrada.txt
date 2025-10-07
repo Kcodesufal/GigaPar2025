@@ -1,7 +1,13 @@
-    def main(): 
-        print("Hello World!")
-        c_channel nossa funciona mesmo
-        if (nossa > 10 and pedrinho < 5): 
-        {
-            c_channel pedrinho c1 c2
-        }
+# Define uma função que aceita 2 parâmetros
+def soma(x, y):
+        print("O resultado da soma eh:", x + y)
+
+
+# Função principal para organizar o código
+def main():
+    # Declara e atribui valores a variáveis
+    a = 25
+    b = 17
+    
+    # Chama a função 'calcular' com 3 argumentos de tipos diferentes
+    soma(a, b)
