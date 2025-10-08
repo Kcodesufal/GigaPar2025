@@ -1,18 +1,51 @@
 program
   stmts
-    assignment
-      'idade'
-      string
-        '"20"'
-    if
-      binop
-        '>='
-        id
-          'idade'
-        number
-          '18'
+    function_stmt
+      'calcular'
+      'x'
+      'y'
+      'operacao'
       stmts
-        builtin_call
-          'print'
+        if_else
+          binop
+            '=='
+            id
+              'operacao'
+            string
+              '"soma"'
+          stmts
+            builtin_call
+              'print'
+              string
+                '"O resultado da soma eh:"'
+              binop
+                '+'
+                id
+                  'x'
+                id
+                  'y'
+          stmts
+            builtin_call
+              'print'
+              string
+                '"Operacao nao reconhecida"'
+    function_stmt
+      'main'
+
+      stmts
+        assignment
+          'a'
+          number
+            '25'
+        assignment
+          'b'
+          number
+            '17'
+        call
+          'calcular'
+          id
+            'a'
+          id
+            'b'
           string
-            '"texto"'
+            '"soma"'

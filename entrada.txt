@@ -1,3 +1,17 @@
-idade = "20"
-if (idade >= 18):
-        print("texto")
+# Define uma função que aceita 3 parâmetros
+def calcular(x, y, operacao):
+    # Usa um if para comparar uma string
+    if (operacao == "soma"):
+        # Chama o print com múltiplos argumentos (string e expressão)
+        print("O resultado da soma eh:", x + y)
+    else:
+        print("Operacao nao reconhecida")
+
+# Função principal para organizar o código
+def main():
+    # Declara e atribui valores a variáveis
+    a = 25
+    b = 17
+    
+    # Chama a função 'calcular' com 3 argumentos de tipos diferentes
+    calcular(a, b, "soma")

@@ -1,0 +1,30 @@
+goto L0
+calcular:
+begin_func
+get_param x
+get_param y
+get_param operacao
+t0 = operacao == "soma"
+if_false t0 goto L1
+t1 = x + y
+param t1
+param "O resultado da soma eh:"
+t2 = call print, 2
+goto L2
+L1:
+param "Operacao nao reconhecida"
+t3 = call print, 1
+L2:
+end_func
+L0:
+goto L3
+main:
+begin_func
+a = 25
+b = 17
+param "soma"
+param b
+param a
+t4 = call calcular, 3
+end_func
+L3:
