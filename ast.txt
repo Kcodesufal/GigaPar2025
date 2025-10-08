@@ -1,0 +1,18 @@
+program
+  stmts
+    assignment
+      'idade'
+      string
+        '"20"'
+    if
+      binop
+        '>='
+        id
+          'idade'
+        number
+          '18'
+      stmts
+        builtin_call
+          'print'
+          string
+            '"texto"'

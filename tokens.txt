@@ -1,1 +1,1 @@
-<def> <id, soma> <(> <id, x> <,> <id, y> <)> <:> <print> <(> <string, "O resultado da soma eh:"> <,> <id, x> <+> <id, y> <)> <def> <id, main> <(> <)> <:> <id, a> <=> <number, 25> <id, b> <=> <number, 17> <id, soma> <(> <id, a> <,> <id, b> <)>
+<id, idade> <=> <string, "20"> <NEWLINE, None> <if> <(> <id, idade> <>=> <number, 18> <)> <:> <NEWLINE, None> <INDENT> <print> <(> <string, "texto"> <)> <NEWLINE, None> <DEDENT>
