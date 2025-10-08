@@ -1,0 +1,55 @@
+program
+  stmts
+    function_stmt
+      'soma'
+      'x'
+      'y'
+      stmts
+        builtin_call
+          'print'
+          string
+            '"O resultado da soma eh:"'
+          binop
+            '+'
+            id
+              'x'
+            id
+              'y'
+    par_stmt
+      stmts
+        function_stmt
+          'alfa'
+
+          stmts
+            assignment
+              'a'
+              number
+                '25'
+            assignment
+              'b'
+              number
+                '17'
+            call
+              'soma'
+              id
+                'a'
+              id
+                'b'
+        function_stmt
+          'beta'
+
+          stmts
+            assignment
+              'c'
+              number
+                '11'
+            assignment
+              'd'
+              number
+                '12'
+            call
+              'soma'
+              id
+                'c'
+              id
+                'd'
