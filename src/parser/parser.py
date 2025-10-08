@@ -314,6 +314,11 @@ class Parser(IParser):
 
     def unary_expr(self):
         ttype, value = self.current_token()
+
+        if ttype == "ID" and self.peek(1) == ("SYM", "("):
+            return self.call()
+        if (ttype, value) in {("KEYWORD", "print"), ("KEYWORD", "input")} and self.peek(1) == ("SYM", "("):
+            return self.builtin_call()
         if ttype in {"NUMBER", "ID", "BOOLEAN", "STRING"}:
             self.pos += 1
             return (ttype.lower(), value)
