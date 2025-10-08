@@ -1,1 +1,0 @@
-Pseudocode for 3-address code generator: emit LOAD_CONST, LOAD_VAR, STORE, arithmetic, labels, jumps.

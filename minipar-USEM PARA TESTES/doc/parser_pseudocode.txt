@@ -1,1 +1,0 @@
-Pseudocode for Parser: recursive-descent; supports SEQ, PAR, statements, expressions with precedence.

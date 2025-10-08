@@ -1,1 +1,0 @@
-Pseudocode for Semantic Analyzer: tracks assigned vars, type checks, collects errors.

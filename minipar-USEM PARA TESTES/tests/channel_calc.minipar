@@ -1,5 +1,0 @@
-c_channel calculadora computador_1 computador_2
-SEQ
-send(calculadora, "+", 4, 5)
-receive(calculadora, resultado)
-print(resultado)
