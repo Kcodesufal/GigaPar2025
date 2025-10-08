@@ -50,7 +50,6 @@ class Parser(IParser):
         return ("program", self.stmts())
 
     def stmts(self):
-        """Lista de statements, separados por NEWLINE e agrupados por indentação."""
         stmts_list = []
         self.skip_newlines()
 
@@ -58,17 +57,12 @@ class Parser(IParser):
             ttype, value = self.current_token()
             if ttype in {"EOF", "DEDENT"}:
                 break
-
             if ttype == "NEWLINE":
                 self.skip_newlines()
                 continue
-
             stmt_node = self.stmt()
             stmts_list.append(stmt_node)
-
-            # Após um comando, pode haver NEWLINE
             self.skip_newlines()
-
         return ("stmts", stmts_list)
 
     # ===========================
@@ -87,6 +81,7 @@ class Parser(IParser):
         elif ttype == "KEYWORD":
             if value == "if": return self.if_stmt()
             elif value == "while": return self.while_stmt()
+            elif value == "for": return self.for_stmt()  # <--- NOVO
             elif value == "c_channel": return self.channel_stmt()
             elif value == "def": return self.function_stmt()
             elif value in ("SEQ", "PAR"): return self.compound_stmt()
@@ -152,6 +147,46 @@ class Parser(IParser):
         body = self.stmts()
         self.eat("DEDENT")
         return ("while", cond, body)
+
+    # ===========================
+    # NOVO: for estilo C/Python
+    # ===========================
+    def for_stmt(self):
+        self.eat("KEYWORD", "for")
+        self.eat("SYM", "(")
+
+        # Parte 1: inicialização (pode ser vazia)
+        init = None
+        if self.current_token() != ("SYM", ";"):
+            if self.current_token()[0] == "ID" and self.peek(1) == ("OP", "="):
+                init = self.assignment()
+            else:
+                init = self.expression()
+        self.eat("SYM", ";")
+
+        # Parte 2: condição (pode ser vazia)
+        cond = None
+        if self.current_token() != ("SYM", ";"):
+            cond = self.expression()
+        self.eat("SYM", ";")
+
+        # Parte 3: incremento (pode ser vazia)
+        update = None
+        if self.current_token() != ("SYM", ")"):
+            if self.current_token()[0] == "ID" and self.peek(1) == ("OP", "="):
+                update = self.assignment()
+            else:
+                update = self.expression()
+        self.eat("SYM", ")")
+
+        # Corpo
+        self.eat("SYM", ":")
+        self.skip_newlines()
+        self.eat("INDENT")
+        body = self.stmts()
+        self.eat("DEDENT")
+
+        return ("for", init, cond, update, body)
 
     def function_stmt(self):
         self.eat("KEYWORD", "def")

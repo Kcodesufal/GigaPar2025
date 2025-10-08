@@ -6,7 +6,7 @@ import re
 
 KEYWORDS = {
     "if", "else", "while", "print", "def", "c_channel",
-    "SEQ", "PAR", "and", "or", "not"
+    "SEQ", "PAR", "and", "or", "not", "for"
 }
 
 TOKEN_REGEX = [

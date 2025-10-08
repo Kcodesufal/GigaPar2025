@@ -1,22 +1,24 @@
 program
   stmts
-    assignment
-      'x'
-      number
-        '10'
-    builtin_call
-      'print'
-      id
-        'x'
-    function_stmt
-      'teste'
-      'a'
+    for
+      assignment
+        'i'
+        number
+          '0'
+      binop
+        '<'
+        id
+          'i'
+        number
+          '5'
+      binop
+        '+'
+        id
+          'i'
+        number
+          '1'
       stmts
         builtin_call
           'print'
           id
-            'a'
-    call
-      'teste'
-      id
-        'x'
+            'i'

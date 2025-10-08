@@ -1,1 +1,1 @@
-<id, for> <id, i> <id, in> <id, range> <(> <number, 5> <)> <:> <NEWLINE, None> <INDENT> <print> <(> <id, j> <)> <NEWLINE, None> <DEDENT>
+<for> <(> <id, i> <=> <number, 0> <;> <id, i> <<> <number, 5> <;> <id, i> <+> <number, 1> <)> <:> <NEWLINE, None> <INDENT> <print> <(> <id, i> <)> <NEWLINE, None> <DEDENT>

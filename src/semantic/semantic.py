@@ -201,6 +201,28 @@ class SemanticAnalyzer:
                 raise SemanticError("Condição do 'while' deve ser booleana.")
             self.visit(body, SymbolTable(parent=scope))
             return None
+        elif nodetype == "for":
+            # ("for", init_stmt, cond_expr, update_stmt, body)
+            init_stmt, cond_expr, update_stmt, body = node[1], node[2], node[3], node[4]
+
+            # Criar escopo próprio do loop for
+            loop_scope = SymbolTable(parent=scope)
+
+            # Analisar a inicialização (pode definir variáveis)
+            self.visit(init_stmt, loop_scope)
+
+            # Verificar tipo da condição
+            cond_type = self.visit(cond_expr, loop_scope)
+            if cond_type != "boolean":
+                raise SemanticError("A condição do 'for' deve ser booleana.")
+
+            # Analisar atualização (geralmente é uma atribuição)
+            self.visit(update_stmt, loop_scope)
+
+            # Analisar corpo do loop
+            self.visit(body, SymbolTable(parent=loop_scope))
+
+            return None
 
         elif nodetype in {"seq_stmt", "par_stmt"}:
             # ("seq_stmt", stmts) / ("par_stmt", stmts)

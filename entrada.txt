@@ -1,2 +1,2 @@
-for i in range (5):
-        print(j)
+for (i = 0; i < 5; i + 1):
+        print (i)
