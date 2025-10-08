@@ -3,6 +3,7 @@ from src.parser import parser
 from src.semantic import semantic
 from src.generator import generator  # NOVO: Importa o módulo do gerador
 
+
 def write_tokens_to_file(tokens, filename="tokens.txt"):
     formatted_tokens = []
     for ttype, value in tokens:
@@ -12,7 +13,7 @@ def write_tokens_to_file(tokens, filename="tokens.txt"):
             formatted_tokens.append(f"<{ttype.lower()}, {value}>")
         elif ttype in {"OP", "SYM"}:
             formatted_tokens.append(f"<{value}>")
-        elif ttype in {"INDENT", "DEDENT", "NEWLINE"}:
+        elif ttype in {"INDENT", "DEDENT"}:
             formatted_tokens.append(f"<{ttype}>")
         else:
             formatted_tokens.append(f"<{ttype}, {value}>")
@@ -79,15 +80,14 @@ def main():
             three_address_code = code_gen.generate(ast)
             write_c3e_to_file(three_address_code)
             print("✅ Geração de código de 3 endereços concluída! Salvo em 'c3e.txt'.")
-
         except semantic.SemanticError as se:
             print(f"❌ Erro semântico: {se}")
 
     except FileNotFoundError:
         print("❌ Erro: Arquivo 'entrada.txt' não encontrado.")
     except Exception as e:
-        print(f"❌ Ocorreu um erro inesperado: {e}")
-
+        print(f"❌ Ocorreu um erro: {e}")
+        
 
 if __name__ == "__main__":
     main()
