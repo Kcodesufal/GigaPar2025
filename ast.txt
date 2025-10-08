@@ -1,24 +1,18 @@
 program
   stmts
-    for
-      assignment
-        'i'
-        number
-          '0'
+    assignment
+      'idade'
+      string
+        '"20"'
+    if
       binop
-        '<'
+        '>='
         id
-          'i'
+          'idade'
         number
-          '5'
-      binop
-        '+'
-        id
-          'i'
-        number
-          '1'
+          '18'
       stmts
         builtin_call
           'print'
-          id
-            'i'
+          string
+            '"texto"'

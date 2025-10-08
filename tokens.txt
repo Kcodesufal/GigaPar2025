@@ -1,1 +1,1 @@
-<for> <(> <id, i> <=> <number, 0> <;> <id, i> <<> <number, 5> <;> <id, i> <+> <number, 1> <)> <:> <NEWLINE, None> <INDENT> <print> <(> <id, i> <)> <NEWLINE, None> <DEDENT>
+<id, idade> <=> <string, "20"> <NEWLINE, None> <if> <(> <id, idade> <>=> <number, 18> <)> <:> <NEWLINE, None> <INDENT> <print> <(> <string, "texto"> <)> <NEWLINE, None> <DEDENT>
