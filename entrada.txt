@@ -4,9 +4,10 @@ def soma(x, y):
 
 
 # Teste de paralelismo
+a = 0
 PAR: 
         def alfa():
-
+                a = 2
                 if (a < 1):
                         print("buuuh, errei!")
                 a = 25
@@ -18,4 +19,5 @@ PAR:
                 c = 11
                 d = 12
                 soma(c,d)
-
+                print(a)
+        

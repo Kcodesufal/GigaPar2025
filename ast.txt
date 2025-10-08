@@ -15,12 +15,20 @@ program
               'x'
             id
               'y'
+    assignment
+      'a'
+      number
+        '0'
     par_stmt
       stmts
         function_stmt
           'alfa'
 
           stmts
+            assignment
+              'a'
+              number
+                '2'
             if
               binop
                 '<'
@@ -65,3 +73,7 @@ program
                 'c'
               id
                 'd'
+            builtin_call
+              'print'
+              id
+                'a'
