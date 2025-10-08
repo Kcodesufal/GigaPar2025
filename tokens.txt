@@ -1,1 +1,1 @@
-<def> <id, main> <(> <)> <:> <print> <(> <string, "Hello World!"> <)> <c_channel> <(> <string, "Isso é só um teste pra ver se o tipo está funcionando corretamente."> <)>
+<def> <id, soma> <(> <id, x> <,> <id, y> <)> <:> <print> <(> <string, "O resultado da soma eh:"> <,> <id, x> <+> <id, y> <)> <def> <id, main> <(> <)> <:> <id, a> <=> <number, 25> <id, b> <=> <number, 17> <id, soma> <(> <id, a> <,> <id, b> <)>

@@ -1,23 +1,38 @@
-import src.lexer as lexer
-import src.parser as parser
+from src.lexer import lexer
 
+def write_tokens_to_file(tokens, filename="tokens.txt"):
+    """
+    Recebe a lista de tokens e grava no arquivo em formato legível.
+    """
+    formatted_tokens = []
+    for ttype, value in tokens:
+        if ttype == "KEYWORD":
+            formatted_tokens.append(f"<{value}>")
+        elif ttype in {"NUMBER", "ID", "BOOLEAN", "STRING"}:
+            formatted_tokens.append(f"<{ttype.lower()}, {value}>")
+        elif ttype in {"OP", "SYM"}:
+            formatted_tokens.append(f"<{value}>")
+        else:
+            formatted_tokens.append(f"<{ttype}, {value}>")
 
+    with open(filename, "w", encoding="utf-8") as f:
+        f.write(" ".join(formatted_tokens))
 
-def main(): # Há duas opções para main: Recebemos o código a ser tokenizado via um arquivo ou via o terminal. 
-    # Também é possível fazê-lo por meio de uma interface gráfica, o que pode colaborar com a nota (fiquem atentos nisso!)
+def main():
+    try:
+        with open('entrada.txt', 'r', encoding='utf-8') as f:
+            code = f.read()
 
-        # Ler código de entrada
-    with open("entrada.txt", "r", encoding="utf-8") as f:
-        code = f.read()
+        tokens = lexer.lexer(code)
+        
+        write_tokens_to_file(tokens)
 
-    tokens = lexer.lexer(code)
+        print("Análise léxica concluída com sucesso! Tokens salvos em 'tokens.txt'.")
 
-    # Salvar saída formatada
-    with open("tokens.txt", "w", encoding="utf-8") as f:
-        f.write(" ".join(tokens))
-
-    print("✅ Tokens gerados em 'tokens.txt'")
-
+    except FileNotFoundError:
+        print("Erro: Arquivo 'entrada.txt' não encontrado.")
+    except Exception as e:
+        print(f"Ocorreu um erro: {e}")
 
 
 if __name__ == "__main__":
