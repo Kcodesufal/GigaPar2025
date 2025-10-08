@@ -1,23 +1,2 @@
-# Define uma função que aceita 2 parâmetros
-def soma(x, y):
-        print("O resultado da soma eh:", x + y)
-
-
-# Teste de paralelismo
-a = 0
-PAR: 
-        def alfa():
-                a = 2
-                if (a < 1):
-                        print("buuuh, errei!")
-                a = 25
-                b = 17
-                
-                soma(a,b)
-        
-        def beta():
-                c = 11
-                d = 12
-                soma(c,d)
-                print(a)
-        
+for i in range (5):
+        print(j)
