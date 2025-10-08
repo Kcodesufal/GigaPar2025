@@ -1,11 +1,8 @@
 from src.lexer import lexer
 from src.parser import parser
-
+from src.semantic import semantic  # assumindo que você salvou o analisador semântico em semantic.py
 
 def write_tokens_to_file(tokens, filename="tokens.txt"):
-    """
-    Recebe a lista de tokens e grava no arquivo em formato legível.
-    """
     formatted_tokens = []
     for ttype, value in tokens:
         if ttype == "KEYWORD":
@@ -24,14 +21,8 @@ def write_tokens_to_file(tokens, filename="tokens.txt"):
 
 
 def write_ast_to_file(ast, filename="ast.txt"):
-    """
-    Recebe a AST (árvore sintática abstrata) e grava no arquivo em formato legível.
-    Suporta nós representados como tuplas, listas ou objetos com atributos.
-    """
     def format_ast(node, level=0):
         pad = "  " * level
-
-        # Caso o nó seja uma tupla (ex: ('if', cond, bloco))
         if isinstance(node, tuple):
             head = node[0]
             children = node[1:]
@@ -39,20 +30,14 @@ def write_ast_to_file(ast, filename="ast.txt"):
             for child in children:
                 lines.append(format_ast(child, level + 1))
             return "\n".join(lines)
-
-        # Caso seja uma lista (vários nós)
         elif isinstance(node, list):
             return "\n".join(format_ast(item, level) for item in node)
-
-        # Caso seja um objeto do parser com atributos (ex: classe Node)
         elif hasattr(node, "__dict__"):
             lines = [f"{pad}{node.__class__.__name__}:"]
             for attr, value in vars(node).items():
                 lines.append(f"{pad}  {attr}:")
                 lines.append(format_ast(value, level + 2))
             return "\n".join(lines)
-
-        # Caso seja um valor simples
         else:
             return f"{pad}{repr(node)}"
 
@@ -60,9 +45,10 @@ def write_ast_to_file(ast, filename="ast.txt"):
         f.write(format_ast(ast))
 
 
+
+
 def main():
     try:
-        # E lá vamos nós, realizar a leitura do código fonte!
         with open("entrada.txt", "r", encoding="utf-8") as f:
             code = f.read()
 
@@ -80,6 +66,16 @@ def main():
         ast = p.parse()
         write_ast_to_file(ast)
         print("✅ Análise sintática concluída com sucesso! AST salva em 'ast.txt'.")
+
+        # =======================
+        # Análise Semântica
+        # =======================
+        try:
+            analyzer = semantic.SemanticAnalyzer(ast)
+            analyzer.analyze()
+            print("✅ Análise semântica concluída com sucesso!")
+        except semantic.SemanticError as se:
+            print(f"❌ Erro semântico: {se}")
 
     except FileNotFoundError:
         print("❌ Erro: Arquivo 'entrada.txt' não encontrado.")

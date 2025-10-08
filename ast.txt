@@ -21,6 +21,18 @@ program
           'alfa'
 
           stmts
+            if
+              binop
+                '<'
+                id
+                  'a'
+                number
+                  '1'
+              stmts
+                builtin_call
+                  'print'
+                  string
+                    '"buuuh, errei!"'
             assignment
               'a'
               number
