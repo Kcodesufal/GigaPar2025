@@ -10,11 +10,15 @@ t1 = x + y
 param t1
 param "O resultado da soma eh:"
 t2 = call print, 2
+t3 = x + y
+return t3
+goto L0
 goto L2
 L1:
 param "Operacao nao reconhecida"
-t3 = call print, 1
+t4 = call print, 1
 L2:
+return
 end_func
 L0:
 goto L3
@@ -25,6 +29,37 @@ b = 17
 param "soma"
 param b
 param a
-t4 = call calcular, 3
+t5 = call calcular, 3
+t6 = t5 * 15
+x = t6
+i = 0
+L4:
+t7 = i < 10
+if_false t7 goto L5
+param i
+t8 = call print, 1
+t9 = i + 1
+goto L4
+L5:
+# BEGIN PARALLEL BLOCK
+param i
+t10 = call print, 1
+param a
+t11 = call print, 1
+channel_decl c1, i, b
+# END PARALLEL BLOCK
+param "hiii, i'm testing some stuff here!"
+t12 = call print, 1
+x = 1
+param x
+t13 = call print, 1
+t14 = a - x
+t15 = a / 15
+t16 = t14 + t15
+b = t16
+return 1
+goto L3
+return
 end_func
 L3:
+t17 = call main, 0

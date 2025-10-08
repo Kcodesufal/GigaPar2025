@@ -24,6 +24,13 @@ program
                   'x'
                 id
                   'y'
+            return_stmt
+              binop
+                '+'
+                id
+                  'x'
+                id
+                  'y'
           stmts
             builtin_call
               'print'
@@ -41,11 +48,88 @@ program
           'b'
           number
             '17'
-        call
-          'calcular'
+        assignment
+          'x'
+          binop
+            '*'
+            call
+              'calcular'
+              id
+                'a'
+              id
+                'b'
+              string
+                '"soma"'
+            number
+              '15'
+        assignment
+          'i'
+          number
+            '0'
+        for
           id
-            'a'
-          id
-            'b'
+            'i'
+          binop
+            '<'
+            id
+              'i'
+            number
+              '10'
+          binop
+            '+'
+            id
+              'i'
+            number
+              '1'
+          stmts
+            builtin_call
+              'print'
+              id
+                'i'
+        par_stmt
+          stmts
+            builtin_call
+              'print'
+              id
+                'i'
+            builtin_call
+              'print'
+              id
+                'a'
+            channel_stmt
+              'c1'
+              'i'
+              'b'
+        builtin_call
+          'print'
           string
-            '"soma"'
+            '"hiii, i\'m testing some stuff here!"'
+        assignment
+          'x'
+          number
+            '1'
+        builtin_call
+          'print'
+          id
+            'x'
+        assignment
+          'b'
+          binop
+            '+'
+            binop
+              '-'
+              id
+                'a'
+              id
+                'x'
+            binop
+              '/'
+              id
+                'a'
+              number
+                '15'
+        return_stmt
+          number
+            '1'
+    call
+      'main'

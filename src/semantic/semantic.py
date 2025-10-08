@@ -224,6 +224,44 @@ class SemanticAnalyzer:
 
             return None
 
+        # Adicionado suporte a return
+
+        elif nodetype == "return_stmt":
+            # ("return_stmt", expr ou None)
+
+            # Verifica se estamos dentro de uma função
+            if self.current_function is None:
+                raise SemanticError("'return' só pode ser usado dentro de uma função.")
+
+            # Se há uma expressão, analisa seu tipo
+            return_expr = node[1]
+            if return_expr is not None:
+                return_type = self.visit(return_expr, scope)
+
+                # Atualiza o tipo de retorno da função
+                func_info = self.global_scope.lookup(self.current_function)
+                if isinstance(func_info, dict):
+                    existing_return = func_info.get("return", "unknown")
+
+                    # Se já tinha um tipo de retorno diferente, verifica compatibilidade
+                    if existing_return != "unknown" and existing_return != return_type:
+                        raise SemanticError(
+                            f"Função '{self.current_function}' retorna tipos inconsistentes: "
+                            f"{existing_return} e {return_type}."
+                        )
+
+                    func_info["return"] = return_type
+
+                return return_type
+            else:
+                # return vazio (retorna None/void)
+                func_info = self.global_scope.lookup(self.current_function)
+                if isinstance(func_info, dict):
+                    if func_info.get("return", "unknown") == "unknown":
+                        func_info["return"] = "void"
+                return "void"
+
+
         elif nodetype in {"seq_stmt", "par_stmt"}:
             # ("seq_stmt", stmts) / ("par_stmt", stmts)
             self.visit(node[1], SymbolTable(parent=scope))

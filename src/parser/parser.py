@@ -86,6 +86,7 @@ class Parser(IParser):
             elif value == "def": return self.function_stmt()
             elif value in ("SEQ", "PAR"): return self.compound_stmt()
             elif value in ("print", "input"): return self.builtin_call()
+            elif value == "return": return self.return_stmt()
             else: raise ParserError(f"Comando desconhecido: '{value}'")
         else:
             raise ParserError(f"Token inesperado no início de um comando: {ttype}, {value}")
@@ -93,6 +94,28 @@ class Parser(IParser):
     # ===========================
     # Estruturas compostas
     # ===========================
+
+    # Adicionar a nova função return_stmt():
+    def return_stmt(self):
+        """
+        Processa um comando return.
+        Sintaxe: return <expressão>
+        Exemplo: return a + b
+        """
+        self.eat("KEYWORD", "return")
+
+        # Verifica se há uma expressão após o return
+        # (permite return vazio ou return com expressão)
+        ttype, _ = self.current_token()
+
+        # Se o próximo token for NEWLINE ou fim de bloco, é um return vazio
+        if ttype in {"NEWLINE", "DEDENT", "EOF"}:
+            return ("return_stmt", None)
+
+        # Caso contrário, processa a expressão
+        expr = self.expression()
+        return ("return_stmt", expr)
+
     def compound_stmt(self):
         ttype, value = self.current_token()
         if (ttype, value) == ("KEYWORD", "SEQ"):
@@ -291,6 +314,11 @@ class Parser(IParser):
 
     def unary_expr(self):
         ttype, value = self.current_token()
+
+        if ttype == "ID" and self.peek(1) == ("SYM", "("):
+            return self.call()
+        if (ttype, value) in {("KEYWORD", "print"), ("KEYWORD", "input")} and self.peek(1) == ("SYM", "("):
+            return self.builtin_call()
         if ttype in {"NUMBER", "ID", "BOOLEAN", "STRING"}:
             self.pos += 1
             return (ttype.lower(), value)
