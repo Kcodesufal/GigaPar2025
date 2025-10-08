@@ -1,6 +1,7 @@
 from src.lexer import lexer
 from src.parser import parser
-from src.semantic import semantic  # assumindo que você salvou o analisador semântico em semantic.py
+from src.semantic import semantic
+from src.generator import generator  # NOVO: Importa o módulo do gerador
 
 def write_tokens_to_file(tokens, filename="tokens.txt"):
     formatted_tokens = []
@@ -11,7 +12,7 @@ def write_tokens_to_file(tokens, filename="tokens.txt"):
             formatted_tokens.append(f"<{ttype.lower()}, {value}>")
         elif ttype in {"OP", "SYM"}:
             formatted_tokens.append(f"<{value}>")
-        elif ttype in {"INDENT", "DEDENT"}:
+        elif ttype in {"INDENT", "DEDENT", "NEWLINE"}:
             formatted_tokens.append(f"<{ttype}>")
         else:
             formatted_tokens.append(f"<{ttype}, {value}>")
@@ -32,19 +33,16 @@ def write_ast_to_file(ast, filename="ast.txt"):
             return "\n".join(lines)
         elif isinstance(node, list):
             return "\n".join(format_ast(item, level) for item in node)
-        elif hasattr(node, "__dict__"):
-            lines = [f"{pad}{node.__class__.__name__}:"]
-            for attr, value in vars(node).items():
-                lines.append(f"{pad}  {attr}:")
-                lines.append(format_ast(value, level + 2))
-            return "\n".join(lines)
         else:
             return f"{pad}{repr(node)}"
 
     with open(filename, "w", encoding="utf-8") as f:
         f.write(format_ast(ast))
 
-
+def write_c3e_to_file(instructions, filename="c3e.txt"):
+    """Salva a lista de instruções C3E em um arquivo, uma por linha."""
+    with open(filename, "w", encoding="utf-8") as f:
+        f.write("\n".join(instructions))
 
 
 def main():
@@ -68,19 +66,27 @@ def main():
         print("✅ Análise sintática concluída com sucesso! AST salva em 'ast.txt'.")
 
         # =======================
-        # Análise Semântica
+        # Análise Semântica e Geração de Código
         # =======================
         try:
+            # Etapa 3: Análise Semântica
             analyzer = semantic.SemanticAnalyzer(ast)
             analyzer.analyze()
             print("✅ Análise semântica concluída com sucesso!")
+
+            # NOVO: Etapa 4: Geração de Código de 3 Endereços
+            code_gen = generator.CodeGenerator()
+            three_address_code = code_gen.generate(ast)
+            write_c3e_to_file(three_address_code)
+            print("✅ Geração de código de 3 endereços concluída! Salvo em 'c3e.txt'.")
+
         except semantic.SemanticError as se:
             print(f"❌ Erro semântico: {se}")
 
     except FileNotFoundError:
         print("❌ Erro: Arquivo 'entrada.txt' não encontrado.")
     except Exception as e:
-        print(f"❌ Ocorreu um erro: {e}")
+        print(f"❌ Ocorreu um erro inesperado: {e}")
 
 
 if __name__ == "__main__":
