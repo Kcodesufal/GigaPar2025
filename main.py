@@ -1,7 +1,7 @@
 from src.lexer import lexer
 from src.parser import parser
 from src.semantic import semantic
-from src.generator import generator  
+from src.generator import generator  # NOVO: Importa o módulo do gerador  
 
 
 def write_tokens_to_file(tokens, filename="tokens.txt"):
@@ -51,24 +51,35 @@ def main():
         with open("entrada.txt", "r", encoding="utf-8") as f:
             code = f.read()
 
+        # =======================
+        # Análise Léxica
+        # =======================
         
         tokens = lexer.lexer(code)
         write_tokens_to_file(tokens)
         print("✅ Análise léxica concluída com sucesso! Tokens salvos em 'tokens.txt'.")
 
+        # =======================
+        # Análise Sintática
+        # =======================
        
         p = parser.Parser(tokens)
         ast = p.parse()
         write_ast_to_file(ast)
         print("✅ Análise sintática concluída com sucesso! AST salva em 'ast.txt'.")
 
+        # =======================
+        # Análise Semântica e Geração de Código
+        # =======================
         
         try:
+            # Etapa 3: Análise Semântica
             
             analyzer = semantic.SemanticAnalyzer(ast)
             analyzer.analyze()
             print("✅ Análise semântica concluída com sucesso!")
 
+            # NOVO: Etapa 4: Geração de Código de 3 Endereços
             
             code_gen = generator.CodeGenerator()
             three_address_code = code_gen.generate(ast)
@@ -81,7 +92,7 @@ def main():
         print("❌ Erro: Arquivo 'entrada.txt' não encontrado.")
     except Exception as e:
         print(f"❌ Ocorreu um erro: {e}")
-        
+
 
 if __name__ == "__main__":
     main()
