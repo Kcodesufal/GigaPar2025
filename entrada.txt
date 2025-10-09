@@ -6,3 +6,4 @@ calculadora.receive(a,b,c)
 
 a = a + 2
 b = b + a
+#git tá bugado, recomittando
