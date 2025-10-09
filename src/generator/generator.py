@@ -1,7 +1,8 @@
 class CodeGenerator:
     """
     Gera Código de 3 Endereços (C3E) a partir de uma AST semanticamente validada.
-    Implementa suporte ao comando `return`.
+    Implementa suporte ao comando `return` e aos novos comandos de canal: `c_channel`,
+    `channel.send(...)` e `channel.receive(...)`.
     """
     def __init__(self):
         self.instructions = []  # A lista de instruções C3E geradas
@@ -275,3 +276,42 @@ class CodeGenerator:
         # garante que o fluxo salte para o fim da função (se estivermos dentro de uma função)
         if self.current_function_end_label is not None:
             self.add_instruction(f"goto {self.current_function_end_label}")
+
+    # ========================================
+    # SUPORTE A CHANNEL SEND / RECEIVE
+    # ========================================
+    def visit_channel_send(self, node):
+        # ("channel_send", channel_name, [args])
+        channel_name, args = node[1], node[2]
+
+        # Avalia todos os argumentos
+        arg_addrs = [self.visit(arg) for arg in args]
+
+        # Empilha parâmetros (ordem inversa é comum nas convenções de C3E)
+        for a in reversed(arg_addrs):
+            self.add_instruction(f"param {a}")
+
+        # Emite instrução de envio para o canal. Convenção usada:
+        #   send <channel>, <n_params>
+        # o runtime/IR pode consumir os 'param' anteriores.
+        self.add_instruction(f"send {channel_name}, {len(arg_addrs)}")
+
+        # send não produz valor intermediário
+        return None
+
+    def visit_channel_receive(self, node):
+        # ("channel_receive", channel_name, [args])
+        channel_name, args = node[1], node[2]
+
+        # Esperamos que cada arg seja um nó ('id', name). Geramos instrução:
+        #   receive <channel>, var1, var2, ...
+        # que coloca os valores recebidos diretamente nas variáveis indicadas.
+        var_names = []
+        for a in args:
+            if a[0] != "id":
+                raise Exception("Argumentos de receive devem ser variáveis (id).")
+            var_names.append(a[1])
+
+        self.add_instruction(f"receive {channel_name}, {', '.join(var_names)}")
+
+        return None

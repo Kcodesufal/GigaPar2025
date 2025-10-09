@@ -1,37 +1,8 @@
-# Define uma função que aceita 3 parâmetros
-def calcular(x, y, operacao):
-    # Usa um if para comparar uma string
-    if (operacao == "soma"):
-        # Chama o print com múltiplos argumentos (string e expressão)
-        print("O resultado da soma eh:", x + y)
-        return x + y
-    else:
-        print("Operacao nao reconhecida")
+c_channel calculadora computador1 computador2
 
-# Função principal para organizar o código
-def main():
-    # Declara e atribui valores a variáveis
-    a = 25
-    b = 17
-    # Chama a função 'calcular' com 3 argumentos de tipos diferentes
-    x = calcular(a, b, "soma")*15
-    i = 0
-    for (i; i < 10; i + 1):
-        print(i)
-    PAR:
-        print(i)
-        print(a)
-    print("hiii, i'm testing some stuff here!")
-    x = 1
-    print(x)
-    b = a - x + a/15
-    c_channel serverclient c1 c2
-    c1.send(1,2,3,4,a)
-    c2.receive(y,i,j,k,l)
-    print(y)
-    print(c2)
-    return 1
+calculadora.send(1,2,3)
 
+calculadora.receive(a,b,c) 
 
-main()
-# teste
+a = a + 2
+b = b + a
