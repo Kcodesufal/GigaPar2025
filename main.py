@@ -1,8 +1,7 @@
 from src.lexer import lexer
 from src.parser import parser
 from src.semantic import semantic
-from src.generator import generator  # NOVO: Importa o módulo do gerador
-from src.generator import generator  
+from src.generator import generator  # NOVO: Importa o módulo do gerador  
 
 
 def write_tokens_to_file(tokens, filename="tokens.txt"):
