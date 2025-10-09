@@ -57,9 +57,12 @@ t14 = a - x
 t15 = a / 15
 t16 = t14 + t15
 b = t16
+channel_decl c2, i, b
+param c2
+t17 = call print, 1
 return 1
 goto L3
 return
 end_func
 L3:
-t17 = call main, 0
+t18 = call main, 0

@@ -66,6 +66,7 @@ class SemanticAnalyzer:
         """Inicia a análise semântica do AST."""
         self.visit(self.ast, self.global_scope)
 
+
     # ===========================================================
     # VISITADOR
     # ===========================================================
@@ -274,6 +275,76 @@ class SemanticAnalyzer:
                     scope.define(var, {"type": "channel", "initialized": True})
             return "channel"
 
+
+        # =======================================================
+        # SUPORTE A C_CHANNEL
+        # =======================================================
+        elif nodetype == "channel_stmt":
+            # ("channel_stmt", channel_name, comp1, comp2)
+            channel_name, comp1, comp2 = node[1], node[2], node[3]
+
+            # Define o canal como um tipo especial
+            if scope.resolve(channel_name) is not None:
+                raise SemanticError(f"Canal '{channel_name}' já foi definido.")
+            scope.define(channel_name, {
+                "type": "channel",
+                "initialized": True,
+                "endpoint1": comp1,
+                "endpoint2": comp2
+            })
+
+            # Define também os computadores envolvidos (se ainda não existirem)
+            for comp in (comp1, comp2):
+                if scope.resolve(comp) is None:
+                    scope.define(comp, {"type": "computer", "initialized": True})
+
+            return "channel"
+
+        # =======================================================
+        # SUPORTE A SEND E RECEIVE
+        # =======================================================
+        elif nodetype == "channel_send":
+            # ("channel_send", channel_name, [args])
+            channel_name, args = node[1], node[2]
+
+            # Verifica se o canal existe e é válido
+            info = scope.lookup(channel_name)
+            if not isinstance(info, dict) or info.get("type") != "channel":
+                raise SemanticError(f"'{channel_name}' não é um canal válido para 'send'.")
+
+            # Analisa os argumentos (devem estar inicializados)
+            for arg in args:
+                arg_type = self.visit(arg, scope)
+                if arg_type == "unknown":
+                    raise SemanticError(f"Valor indefinido enviado por '{channel_name}.send()'.")
+
+            # Envio não retorna nada
+            return "void"
+
+        elif nodetype == "channel_receive":
+            # ("channel_receive", channel_name, [args])
+            channel_name, args = node[1], node[2]
+
+            info = scope.lookup(channel_name)
+            if not isinstance(info, dict) or info.get("type") != "channel":
+                raise SemanticError(f"'{channel_name}' não é um canal válido para 'receive'.")
+
+            # Os argumentos devem ser variáveis válidas, e marcadas como inicializadas
+            for arg in args:
+                if arg[0] != "id":
+                    raise SemanticError("Apenas variáveis podem ser usadas em 'receive'.")
+                var_name = arg[1]
+
+                if scope.resolve(var_name) is None:
+                    # Se ainda não existe, definimos com tipo desconhecido
+                    scope.define(var_name, {"type": "unknown", "initialized": True})
+                else:
+                    var_info = scope.lookup(var_name)
+                    if isinstance(var_info, dict):
+                        var_info["initialized"] = True
+
+            # Recepção não retorna nada
+            return "void"
         elif nodetype == "binop":
             # ("binop", op, left, right)
             op, left, right = node[1], node[2], node[3]

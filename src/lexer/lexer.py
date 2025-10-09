@@ -1,7 +1,7 @@
 import re
 
 # =================================================
-# DEFINIÇÕES GLOBAIS (Fora de qualquer função)
+# DEFINIÇÕES GLOBAIS
 # =================================================
 
 KEYWORDS = {
@@ -10,6 +10,8 @@ KEYWORDS = {
 }
 
 TOKEN_REGEX = [
+    # Reconhecimento de chamadas de canal deve vir ANTES de ID
+    ("CHANNEL_CALL", r"\b[a-zA-Z_]\w*\.(send|receive)\b"),
     ("NUMBER",  r"\b\d+(\.\d+)?\b"),
     ("BOOLEAN", r"\b(True|False)\b"),
     ("STRING",  r'"([^"\\]|\\.)*"'),
@@ -29,24 +31,25 @@ def lexer(code):
     Realiza a análise léxica com suporte à indentação e retorna uma lista de tokens estruturados.
     """
     tokens = []
-    indent_stack = [0]  # pilha de níveis de indentação
+    indent_stack = [0]
     lines = code.splitlines()
     lineno = 0
 
     for line in lines:
         lineno += 1
+
         # Remove comentários
         if "#" in line:
             line = line.split("#", 1)[0]
 
-        # Ignora linhas completamente vazias
+        # Ignora linhas vazias
         if not line.strip():
             continue
 
-        # Conta espaços iniciais (indentação)
+        # Conta indentação
         indent_level = len(line) - len(line.lstrip(" "))
 
-        # Gera tokens de INDENT/DEDENT se o nível mudar
+        # Gera INDENT/DEDENT
         if indent_level > indent_stack[-1]:
             indent_stack.append(indent_level)
             tokens.append(("INDENT", None))
@@ -58,8 +61,8 @@ def lexer(code):
                 raise ValueError(f"Indentação inválida na linha {lineno}")
 
         pos = len(line) - len(line.lstrip(" "))
+
         while pos < len(line):
-            # Ignora espaços internos
             if line[pos].isspace():
                 pos += 1
                 continue
@@ -69,20 +72,27 @@ def lexer(code):
                 match = regex.match(line, pos)
                 if match:
                     value = match.group(0)
-                    if token_type == "ID" and value in KEYWORDS:
+
+                    if token_type == "CHANNEL_CALL":
+                        if value.endswith(".send"):
+                            tokens.append(("CHANNEL_SEND", value.split(".")[0]))
+                        else:
+                            tokens.append(("CHANNEL_RECEIVE", value.split(".")[0]))
+
+                    elif token_type == "ID" and value in KEYWORDS:
                         tokens.append(("KEYWORD", value))
                     else:
                         tokens.append((token_type, value))
+
                     pos = match.end(0)
                     break
 
             if not match:
                 raise ValueError(f"Token inválido na linha {lineno}, próximo de: '{line[pos:]}'")
 
-        # Fim de linha explícito (útil para parser)
         tokens.append(("NEWLINE", None))
 
-    # Fecha indentação restante
+    # Fecha blocos abertos
     while len(indent_stack) > 1:
         indent_stack.pop()
         tokens.append(("DEDENT", None))

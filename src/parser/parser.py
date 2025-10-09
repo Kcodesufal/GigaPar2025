@@ -70,6 +70,14 @@ class Parser(IParser):
     # ===========================
     def stmt(self):
         ttype, value = self.current_token()
+
+        # NOVO: chamadas de canal
+        if ttype in {"CHANNEL_SEND", "CHANNEL_RECEIVE"}:
+            if ttype == "CHANNEL_SEND":
+                return self.channel_send_stmt()
+            else:
+                return self.channel_receive_stmt()
+
         if ttype == "ID":
             nxt_ttype, nxt_value = self.peek(1)
             if (nxt_ttype, nxt_value) == ("OP", "="):
@@ -78,41 +86,62 @@ class Parser(IParser):
                 return self.call()
             else:
                 raise ParserError(f"Erro após identificador '{value}': esperado '=' ou '('.")
+
         elif ttype == "KEYWORD":
             if value == "if": return self.if_stmt()
             elif value == "while": return self.while_stmt()
-            elif value == "for": return self.for_stmt()  # <--- NOVO
+            elif value == "for": return self.for_stmt()
             elif value == "c_channel": return self.channel_stmt()
             elif value == "def": return self.function_stmt()
             elif value in ("SEQ", "PAR"): return self.compound_stmt()
             elif value in ("print", "input"): return self.builtin_call()
             elif value == "return": return self.return_stmt()
             else: raise ParserError(f"Comando desconhecido: '{value}'")
+
         else:
             raise ParserError(f"Token inesperado no início de um comando: {ttype}, {value}")
 
     # ===========================
-    # Estruturas compostas
+    # NOVO: comandos de canal
     # ===========================
+    def channel_send_stmt(self):
+        """
+        Sintaxe:
+            <id>.send(v1, v2, ...)
+        AST:
+            ("channel_send", <id>, [args])
+        """
+        channel_name = self.eat("CHANNEL_SEND")
+        self.eat("SYM", "(")
+        args = []
+        if self.current_token() != ("SYM", ")"):
+            args = self.args()
+        self.eat("SYM", ")")
+        return ("channel_send", channel_name, args)
 
-    # Adicionar a nova função return_stmt():
+    def channel_receive_stmt(self):
+        """
+        Sintaxe:
+            <id>.receive(v1, v2, ...)
+        AST:
+            ("channel_receive", <id>, [args])
+        """
+        channel_name = self.eat("CHANNEL_RECEIVE")
+        self.eat("SYM", "(")
+        args = []
+        if self.current_token() != ("SYM", ")"):
+            args = self.args()
+        self.eat("SYM", ")")
+        return ("channel_receive", channel_name, args)
+
+    # ===========================
+    # Estruturas compostas e outras
+    # ===========================
     def return_stmt(self):
-        """
-        Processa um comando return.
-        Sintaxe: return <expressão>
-        Exemplo: return a + b
-        """
         self.eat("KEYWORD", "return")
-
-        # Verifica se há uma expressão após o return
-        # (permite return vazio ou return com expressão)
         ttype, _ = self.current_token()
-
-        # Se o próximo token for NEWLINE ou fim de bloco, é um return vazio
         if ttype in {"NEWLINE", "DEDENT", "EOF"}:
             return ("return_stmt", None)
-
-        # Caso contrário, processa a expressão
         expr = self.expression()
         return ("return_stmt", expr)
 
@@ -171,14 +200,9 @@ class Parser(IParser):
         self.eat("DEDENT")
         return ("while", cond, body)
 
-    # ===========================
-    # NOVO: for estilo C/Python
-    # ===========================
     def for_stmt(self):
         self.eat("KEYWORD", "for")
         self.eat("SYM", "(")
-
-        # Parte 1: inicialização (pode ser vazia)
         init = None
         if self.current_token() != ("SYM", ";"):
             if self.current_token()[0] == "ID" and self.peek(1) == ("OP", "="):
@@ -187,13 +211,11 @@ class Parser(IParser):
                 init = self.expression()
         self.eat("SYM", ";")
 
-        # Parte 2: condição (pode ser vazia)
         cond = None
         if self.current_token() != ("SYM", ";"):
             cond = self.expression()
         self.eat("SYM", ";")
 
-        # Parte 3: incremento (pode ser vazia)
         update = None
         if self.current_token() != ("SYM", ")"):
             if self.current_token()[0] == "ID" and self.peek(1) == ("OP", "="):
@@ -202,13 +224,11 @@ class Parser(IParser):
                 update = self.expression()
         self.eat("SYM", ")")
 
-        # Corpo
         self.eat("SYM", ":")
         self.skip_newlines()
         self.eat("INDENT")
         body = self.stmts()
         self.eat("DEDENT")
-
         return ("for", init, cond, update, body)
 
     def function_stmt(self):
@@ -230,9 +250,6 @@ class Parser(IParser):
         self.eat("DEDENT")
         return ("function_stmt", name, params, body)
 
-    # ===========================
-    # Outros statements
-    # ===========================
     def assignment(self):
         id_name = self.eat("ID")
         self.eat("OP", "=")
@@ -314,7 +331,6 @@ class Parser(IParser):
 
     def unary_expr(self):
         ttype, value = self.current_token()
-
         if ttype == "ID" and self.peek(1) == ("SYM", "("):
             return self.call()
         if (ttype, value) in {("KEYWORD", "print"), ("KEYWORD", "input")} and self.peek(1) == ("SYM", "("):

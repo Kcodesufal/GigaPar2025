@@ -96,10 +96,6 @@ program
               'print'
               id
                 'a'
-            channel_stmt
-              'c1'
-              'i'
-              'b'
         builtin_call
           'print'
           string
@@ -128,6 +124,42 @@ program
                 'a'
               number
                 '15'
+        channel_stmt
+          'serverclient'
+          'c1'
+          'c2'
+        channel_send
+          'c1'
+          number
+            '1'
+          number
+            '2'
+          number
+            '3'
+          number
+            '4'
+          id
+            'a'
+        channel_receive
+          'c2'
+          id
+            'y'
+          id
+            'i'
+          id
+            'j'
+          id
+            'k'
+          id
+            'l'
+        builtin_call
+          'print'
+          id
+            'y'
+        builtin_call
+          'print'
+          id
+            'c2'
         return_stmt
           number
             '1'

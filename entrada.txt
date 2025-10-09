@@ -21,11 +21,15 @@ def main():
     PAR:
         print(i)
         print(a)
-        c_channel c1 i b
     print("hiii, i'm testing some stuff here!")
     x = 1
     print(x)
     b = a - x + a/15
+    c_channel serverclient c1 c2
+    c1.send(1,2,3,4,a)
+    c2.receive(y,i,j,k,l)
+    print(y)
+    print(c2)
     return 1
 
 
