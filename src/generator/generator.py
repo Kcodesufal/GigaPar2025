@@ -1,9 +1,4 @@
 class CodeGenerator:
-    """
-    Gera Código de 3 Endereços (C3E) a partir de uma AST semanticamente validada.
-    Implementa suporte ao comando `return` e aos novos comandos de canal: `c_channel`,
-    `channel.send(...)` e `channel.receive(...)`.
-    """
     def __init__(self):
         self.instructions = []  # A lista de instruções C3E geradas
         self.temp_counter = 0   # Contador para variáveis temporárias (t0, t1, ...)
