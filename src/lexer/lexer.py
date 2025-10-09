@@ -10,7 +10,7 @@ KEYWORDS = {
 }
 
 TOKEN_REGEX = [
-    # Reconhecimento de chamadas de canal deve vir ANTES de ID
+    # Reconhecimento de chamadas de canal deve vir ANTES de ID.
     ("CHANNEL_CALL", r"\b[a-zA-Z_]\w*\.(send|receive)\b"),
     ("NUMBER",  r"\b\d+(\.\d+)?\b"),
     ("BOOLEAN", r"\b(True|False)\b"),

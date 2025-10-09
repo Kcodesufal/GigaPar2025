@@ -136,7 +136,7 @@ class SemanticAnalyzer:
             self.visit(body, func_scope)
             self.current_function = prev_func
 
-            # Após analisar o corpo, extraímos os tipos inferidos dos parâmetros
+            # Após analisar o corpo, extraímos os tipos inferidos dos parâmetros...
             for p in params:
                 p_table = func_scope.resolve(p)
                 if p_table:
@@ -225,7 +225,7 @@ class SemanticAnalyzer:
 
             return None
 
-        # Adicionado suporte a return
+        # Lidamos com return abaixo.
 
         elif nodetype == "return_stmt":
             # ("return_stmt", expr ou None)
@@ -426,4 +426,4 @@ class SemanticAnalyzer:
             return "string"
 
         else:
-            raise SemanticError(f"Nó desconhecido: {nodetype}")
+            raise SemanticError(f"Nó desconhecido: {nodetype}") # Se caiu aqui: Precisamos realizar algumas implementações adicionais.
