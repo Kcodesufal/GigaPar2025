@@ -1,14 +1,22 @@
 
+# Arquivos de ambiente
+# NUNCA envie segredos ou chaves de API para o repositório
+
 .env
 
+# Diretórios de cache do Python
 
 __pycache__/
 
+# Arquivos Python compilados
 
 *.pyc
 *.pyo
 *.pyd
 
+
+# Ambientes virtuais
+# A pasta do seu ambiente virtual (pode ter outros nomes)
 
 
 venv/
@@ -16,15 +24,18 @@ venv/
 env/
 virtualenv/
 
+# Arquivos de configuração de IDEs e editores
 
 .vscode/
 .idea/
 
+# Artefatos de build e distribuição
 
 build/
 dist/
 *.egg-info/
 
+# Arquivos de testes
 
 .pytest_cache/
 .coverage
