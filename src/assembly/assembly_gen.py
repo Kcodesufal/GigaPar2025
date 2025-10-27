@@ -1,6 +1,6 @@
 class AssemblyGenerator:
     """
-    Gera código Assembly x86-64 a partir de Código de 3 Endereços (C3E).
+    Gera código Assembly ARMv7 a partir de Código de 3 Endereços (C3E).
     """
 
     def __init__(self):
@@ -12,12 +12,13 @@ class AssemblyGenerator:
         self.channels = {}  # Informações sobre canais declarados
 
         # Registradores disponíveis para variáveis temporárias
-        # Seguindo convenção x86-64 System V ABI
-        self.temp_registers = ['r10', 'r11', 'r12', 'r13', 'r14', 'r15']
+        # ARMv7: r4-r11 são preservados (callee-saved)
+        self.temp_registers = ['r4', 'r5', 'r6', 'r7', 'r8', 'r9', 'r10', 'r11']
         self.reg_index = 0
 
-        # Registradores para parâmetros (primeiros 6 parâmetros)
-        self.param_registers = ['rdi', 'rsi', 'rdx', 'rcx', 'r8', 'r9']
+        # Registradores para parâmetros (primeiros 4 parâmetros)
+        # ARMv7 AAPCS: r0-r3 para argumentos
+        self.param_registers = ['r0', 'r1', 'r2', 'r3']
 
     # ============================================
     # MÉTODOS UTILITÁRIOS
@@ -32,7 +33,7 @@ class AssemblyGenerator:
 
     def emit_comment(self, comment):
         """Adiciona um comentário."""
-        self.asm_code.append(f"    ; {comment}")
+        self.asm_code.append(f"    @ {comment}")
 
     def allocate_register(self, var_name):
         """Aloca um registrador para uma variável temporária."""
@@ -43,15 +44,15 @@ class AssemblyGenerator:
                 self.reg_index += 1
             else:
                 # Se acabaram os registradores, usa a pilha (spilling)
-                self.stack_offset += 8
-                self.var_locations[var_name] = f"-{self.stack_offset}(%rbp)"
+                self.stack_offset += 4  # ARM usa palavras de 4 bytes
+                self.var_locations[var_name] = f"[sp, #{self.stack_offset}]"
         return self.var_locations[var_name]
 
     def get_location(self, operand):
         """Retorna a localização de um operando (registrador, memória ou imediato)."""
         # Se for número literal
         if operand.lstrip('-').replace('.', '', 1).isdigit():
-            return f"${operand}"
+            return f"#{operand}"
 
         # Se for variável temporária (t0, t1, ...)
         if operand.startswith('t') and operand[1:].isdigit():
@@ -62,8 +63,8 @@ class AssemblyGenerator:
             return self.var_locations[operand]
 
         # Aloca na pilha se não existir
-        self.stack_offset += 8
-        self.var_locations[operand] = f"-{self.stack_offset}(%rbp)"
+        self.stack_offset += 4
+        self.var_locations[operand] = f"[sp, #{self.stack_offset}]"
         return self.var_locations[operand]
 
     def add_string_literal(self, string_value):
@@ -72,8 +73,38 @@ class AssemblyGenerator:
         self.string_counter += 1
         # Remove aspas da string
         clean_string = string_value.strip('"')
-        self.data_section.append(f'{label}: .string "{clean_string}"')
+        self.data_section.append(f'{label}: .asciz "{clean_string}"')
         return label
+
+    def load_to_register(self, operand, register):
+        """Carrega um operando para um registrador."""
+        loc = self.get_location(operand)
+
+        if loc.startswith('#'):  # Imediato
+            # Verifica se o imediato cabe em uma instrução MOV
+            value = int(loc[1:])
+            if -256 <= value <= 255 or (0 <= value <= 65535):
+                self.emit(f"mov {register}, {loc}")
+            else:
+                # Usa movw/movt para valores maiores
+                self.emit(f"movw {register}, #{value & 0xFFFF}")
+                if value > 65535:
+                    self.emit(f"movt {register}, #{(value >> 16) & 0xFFFF}")
+        elif loc.startswith('['):  # Memória (pilha)
+            self.emit(f"ldr {register}, {loc}")
+        else:  # Registrador
+            if loc != register:
+                self.emit(f"mov {register}, {loc}")
+
+    def store_from_register(self, register, dest):
+        """Armazena de um registrador para destino."""
+        loc = self.get_location(dest)
+
+        if loc.startswith('['):  # Memória (pilha)
+            self.emit(f"str {register}, {loc}")
+        else:  # Registrador
+            if loc != register:
+                self.emit(f"mov {loc}, {register}")
 
     # ============================================
     # GERAÇÃO PRINCIPAL
@@ -81,7 +112,7 @@ class AssemblyGenerator:
     def generate(self, c3e_instructions):
         """Ponto de entrada: gera assembly a partir das instruções C3E."""
         self.emit_comment("Código gerado pelo compilador GigaPar2025")
-        self.emit_comment("Arquitetura: x86-64")
+        self.emit_comment("Arquitetura: ARMv7")
         self.asm_code.append("")
 
         # Processa cada instrução C3E
@@ -172,31 +203,19 @@ class AssemblyGenerator:
         dest = left.strip()
         right = right.strip()
 
-        dest_loc = self.get_location(dest)
-
         # Operações binárias
         if any(op in right for op in
                [' + ', ' - ', ' * ', ' / ', ' == ', ' != ', ' < ', ' > ', ' <= ', ' >= ', ' and ', ' or ']):
-            self.handle_binary_op(dest_loc, right)
+            self.handle_binary_op(dest, right)
 
         # Operações unárias
         elif right.startswith('not ') or right.startswith('- '):
-            self.handle_unary_op(dest_loc, right)
+            self.handle_unary_op(dest, right)
 
         # Atribuição simples
         else:
-            src_loc = self.get_location(right)
-
-            # Move o valor para o destino
-            if src_loc.startswith('$'):  # Imediato
-                self.emit(f"movq {src_loc}, %rax")
-                self.emit(f"movq %rax, {dest_loc}")
-            elif dest_loc.startswith('-') and src_loc.startswith('-'):  # Ambos na pilha
-                self.emit(f"movq {src_loc}, %rax")
-                self.emit(f"movq %rax, {dest_loc}")
-            else:  # Registrador para registrador ou registrador para memória
-                self.emit(f"movq {src_loc}, %rax")
-                self.emit(f"movq %rax, {dest_loc}")
+            self.load_to_register(right, 'r0')
+            self.store_from_register('r0', dest)
 
     def handle_binary_op(self, dest, expr):
         """Gera código para operações binárias."""
@@ -215,60 +234,60 @@ class AssemblyGenerator:
         left = left.strip()
         right = right.strip()
 
-        left_loc = self.get_location(left)
-        right_loc = self.get_location(right)
-
-        # Carrega operandos em registradores
-        self.emit(f"movq {left_loc}, %rax")
-        self.emit(f"movq {right_loc}, %rbx")
+        # Carrega operandos
+        self.load_to_register(left, 'r0')
+        self.load_to_register(right, 'r1')
 
         # Executa operação
         if op == '+':
-            self.emit("addq %rbx, %rax")
+            self.emit("add r0, r0, r1")
         elif op == '-':
-            self.emit("subq %rbx, %rax")
+            self.emit("sub r0, r0, r1")
         elif op == '*':
-            self.emit("imulq %rbx, %rax")
+            self.emit("mul r0, r0, r1")
         elif op == '/':
-            self.emit("cqto")  # Estende sinal de rax para rdx:rax
-            self.emit("idivq %rbx")
+            # Divisão em ARM requer chamada de função ou instrução SDIV (ARMv7-A)
+            self.emit("sdiv r0, r0, r1")
         elif op in ['==', '!=', '<', '>', '<=', '>=']:
-            self.emit("cmpq %rbx, %rax")
+            self.emit("cmp r0, r1")
             if op == '==':
-                self.emit("sete %al")
+                self.emit("moveq r0, #1")
+                self.emit("movne r0, #0")
             elif op == '!=':
-                self.emit("setne %al")
+                self.emit("movne r0, #1")
+                self.emit("moveq r0, #0")
             elif op == '<':
-                self.emit("setl %al")
+                self.emit("movlt r0, #1")
+                self.emit("movge r0, #0")
             elif op == '>':
-                self.emit("setg %al")
+                self.emit("movgt r0, #1")
+                self.emit("movle r0, #0")
             elif op == '<=':
-                self.emit("setle %al")
+                self.emit("movle r0, #1")
+                self.emit("movgt r0, #0")
             elif op == '>=':
-                self.emit("setge %al")
-            self.emit("movzbq %al, %rax")  # Zero-extend para 64 bits
+                self.emit("movge r0, #1")
+                self.emit("movlt r0, #0")
         elif op == 'and':
-            self.emit("andq %rbx, %rax")
+            self.emit("and r0, r0, r1")
         elif op == 'or':
-            self.emit("orq %rbx, %rax")
+            self.emit("orr r0, r0, r1")
 
         # Salva resultado
-        self.emit(f"movq %rax, {dest}")
+        self.store_from_register('r0', dest)
 
     def handle_unary_op(self, dest, expr):
         """Gera código para operações unárias."""
         if expr.startswith('not '):
             operand = expr[4:].strip()
-            op_loc = self.get_location(operand)
-            self.emit(f"movq {op_loc}, %rax")
-            self.emit("notq %rax")
-            self.emit(f"movq %rax, {dest}")
+            self.load_to_register(operand, 'r0')
+            self.emit("mvn r0, r0")  # MVN = bitwise NOT
+            self.store_from_register('r0', dest)
         elif expr.startswith('- '):
             operand = expr[2:].strip()
-            op_loc = self.get_location(operand)
-            self.emit(f"movq {op_loc}, %rax")
-            self.emit("negq %rax")
-            self.emit(f"movq %rax, {dest}")
+            self.load_to_register(operand, 'r0')
+            self.emit("rsb r0, r0, #0")  # RSB = reverse subtract (0 - r0)
+            self.store_from_register('r0', dest)
 
     def handle_if_false(self, parts):
         """Gera código para desvio condicional."""
@@ -276,26 +295,20 @@ class AssemblyGenerator:
         condition = parts[1]
         label = parts[3]
 
-        cond_loc = self.get_location(condition)
-        self.emit(f"movq {cond_loc}, %rax")
-        self.emit("cmpq $0, %rax")
-        self.emit(f"je {label}")
+        self.load_to_register(condition, 'r0')
+        self.emit("cmp r0, #0")
+        self.emit(f"beq {label}")
 
     def handle_goto(self, parts):
         """Gera código para salto incondicional."""
         label = parts[1]
-        self.emit(f"jmp {label}")
+        self.emit(f"b {label}")
 
     def handle_param(self, parts):
         """Prepara parâmetro para chamada de função (empilha)."""
         param = parts[1]
-        param_loc = self.get_location(param)
-
-        if param_loc.startswith('$'):
-            self.emit(f"movq {param_loc}, %rax")
-            self.emit("pushq %rax")
-        else:
-            self.emit(f"pushq {param_loc}")
+        self.load_to_register(param, 'r0')
+        self.emit("push {r0}")
 
     def handle_call(self, instruction):
         """Gera código para chamada de função."""
@@ -308,58 +321,54 @@ class AssemblyGenerator:
         n_args = int(parts[2])
 
         # Chama a função
-        self.emit(f"call {func_name}")
+        self.emit(f"bl {func_name}")
 
-        # Limpa pilha (n_args * 8 bytes)
+        # Limpa pilha (n_args * 4 bytes)
         if n_args > 0:
-            self.emit(f"addq ${n_args * 8}, %rsp")
+            self.emit(f"add sp, sp, #{n_args * 4}")
 
-        # Salva valor de retorno
-        result_loc = self.get_location(result)
-        self.emit(f"movq %rax, {result_loc}")
+        # Salva valor de retorno (r0)
+        self.store_from_register('r0', result)
 
     def handle_begin_func(self):
-        """Prólogo de função."""
-        self.emit("pushq %rbp")
-        self.emit("movq %rsp, %rbp")
+        """Prólogo de função (ARM AAPCS)."""
+        self.emit("push {fp, lr}")  # Salva frame pointer e link register
+        self.emit("mov fp, sp")  # Setup frame pointer
         # Espaço para variáveis locais será ajustado dinamicamente
 
     def handle_end_func(self):
         """Epílogo de função."""
-        self.emit("movq %rbp, %rsp")
-        self.emit("popq %rbp")
-        self.emit("ret")
+        self.emit("mov sp, fp")
+        self.emit("pop {fp, pc}")  # Restaura FP e retorna (PC = LR)
 
     def handle_get_param(self, parts):
         """Recebe parâmetro de função."""
         param_name = parts[1]
-        # Parâmetros estão na pilha (convenção de chamada)
-        param_loc = self.get_location(param_name)
-        # Simplificação: assume que parâmetros vêm em ordem
-        self.emit(f"movq 16(%rbp), %rax")  # Primeiro parâmetro
-        self.emit(f"movq %rax, {param_loc}")
+        # Parâmetros estão na pilha ou em r0-r3
+        # Simplificação: assume que vêm da pilha
+        self.emit(f"ldr r0, [fp, #8]")  # Primeiro parâmetro
+        self.store_from_register('r0', param_name)
 
     def handle_return(self, parts):
         """Gera código para return."""
         if len(parts) > 1:
             ret_value = parts[1]
-            ret_loc = self.get_location(ret_value)
-            self.emit(f"movq {ret_loc}, %rax")
-        self.emit("jmp .FUNC_END")  # Pula para epílogo
+            self.load_to_register(ret_value, 'r0')
+        self.emit("b .FUNC_END")  # Pula para epílogo
 
     def handle_send(self, instruction):
         """Simula envio de dados por canal."""
         # Formato: send channel, n_params
         self.emit_comment(f"Operação de envio: {instruction}")
         # Implementação simplificada - na prática precisaria de syscalls ou runtime
-        self.emit("nop  ; send operation")
+        self.emit("nop  @ send operation")
 
     def handle_receive(self, instruction):
         """Simula recepção de dados por canal."""
         # Formato: receive channel, var1, var2, ...
         self.emit_comment(f"Operação de recepção: {instruction}")
         # Implementação simplificada
-        self.emit("nop  ; receive operation")
+        self.emit("nop  @ receive operation")
 
     # ============================================
     # MONTAGEM FINAL
@@ -367,6 +376,11 @@ class AssemblyGenerator:
     def assemble_final_code(self):
         """Monta o código assembly completo com seções."""
         final_code = []
+
+        # Diretivas ARM
+        final_code.append(".arch armv7-a")
+        final_code.append(".arm")
+        final_code.append("")
 
         # Seção .data
         if self.data_section:
@@ -376,15 +390,15 @@ class AssemblyGenerator:
 
         # Seção .text
         final_code.append(".section .text")
-        final_code.append(".globl _start")
+        final_code.append(".global _start")
         final_code.append("")
         final_code.append("_start:")
-        final_code.append("    ; Ponto de entrada do programa")
-        final_code.append("    call main")
-        final_code.append("    ; Exit syscall")
-        final_code.append("    movq $60, %rax")
-        final_code.append("    xorq %rdi, %rdi")
-        final_code.append("    syscall")
+        final_code.append("    @ Ponto de entrada do programa")
+        final_code.append("    bl main")
+        final_code.append("    @ Exit syscall (ARM Linux)")
+        final_code.append("    mov r0, #0")
+        final_code.append("    mov r7, #1      @ syscall number for exit")
+        final_code.append("    swi 0           @ software interrupt")
         final_code.append("")
         final_code.append("main:")
 
@@ -393,8 +407,8 @@ class AssemblyGenerator:
 
         # Retorno da main
         final_code.append("")
-        final_code.append("    ; Retorno da main")
-        final_code.append("    movq $0, %rax")
-        final_code.append("    ret")
+        final_code.append("    @ Retorno da main")
+        final_code.append("    mov r0, #0")
+        final_code.append("    bx lr")
 
         return "\n".join(final_code)

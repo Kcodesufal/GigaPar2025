@@ -87,7 +87,7 @@ def main():
             asm_gen = assembly_gen.AssemblyGenerator()
             assembly_code = asm_gen.generate(three_address_code)
             write_assembly_to_file(assembly_code)
-            print("✅ Geração de Assembly x86-64 concluída! Salvo em 'output.s'.")
+            print("✅ Geração de Assembly ARMv7 concluída! Salvo em 'output.s'.")
 
             print("\n" + "=" * 60)
             print("COMPILAÇÃO COMPLETA!")
