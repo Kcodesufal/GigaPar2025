@@ -1,12 +1,14 @@
 from src.lexer import lexer
 from src.parser import parser
 from src.semantic import semantic
-from src.generator import generator  
+from src.generator import generator
+from src.assembly import assembly_gen
 
 '''
 As funções "Write" realizam a escrita em arquivos para facilitar a visualização.
 São de caráter temporário e estão aqui apenas por conveniência na hora de debugar o código e mostrar os resultados ao professor.
 '''
+
 
 def write_tokens_to_file(tokens, filename="tokens.txt"):
     formatted_tokens = []
@@ -44,10 +46,17 @@ def write_ast_to_file(ast, filename="ast.txt"):
     with open(filename, "w", encoding="utf-8") as f:
         f.write(format_ast(ast))
 
+
 def write_c3e_to_file(instructions, filename="c3e.txt"):
     """Salva a lista de instruções C3E em um arquivo, uma por linha."""
     with open(filename, "w", encoding="utf-8") as f:
         f.write("\n".join(instructions))
+
+
+def write_assembly_to_file(asm_code, filename="output.s"):
+    """Salva o código assembly em um arquivo."""
+    with open(filename, "w", encoding="utf-8") as f:
+        f.write(asm_code)
 
 
 def main():
@@ -55,37 +64,51 @@ def main():
         with open("entrada.txt", "r", encoding="utf-8") as f:
             code = f.read()
 
-        
         tokens = lexer.lexer(code)
         write_tokens_to_file(tokens)
         print("✅ Análise léxica concluída com sucesso! Tokens salvos em 'tokens.txt'.")
 
-       
         p = parser.Parser(tokens)
         ast = p.parse()
         write_ast_to_file(ast)
         print("✅ Análise sintática concluída com sucesso! AST salva em 'ast.txt'.")
 
-        
         try:
-            
+
             analyzer = semantic.SemanticAnalyzer(ast)
             analyzer.analyze()
             print("✅ Análise semântica concluída com sucesso!")
 
-            
             code_gen = generator.CodeGenerator()
             three_address_code = code_gen.generate(ast)
             write_c3e_to_file(three_address_code)
             print("✅ Geração de código de 3 endereços concluída! Salvo em 'c3e.txt'.")
+
+            asm_gen = assembly_gen.AssemblyGenerator()
+            assembly_code = asm_gen.generate(three_address_code)
+            write_assembly_to_file(assembly_code)
+            print("✅ Geração de Assembly x86-64 concluída! Salvo em 'output.s'.")
+
+            print("\n" + "=" * 60)
+            print("COMPILAÇÃO COMPLETA!")
+            print("=" * 60)
+            print("Arquivos gerados:")
+            print("   • tokens.txt      - Tokens do código")
+            print("   • ast.txt         - Árvore Sintática Abstrata")
+            print("   • c3e.txt         - Código de 3 Endereços")
+            print("   • output.s        - Código Assembly x86-64")
+            print("=" * 60)
+
         except semantic.SemanticError as se:
-            print(f"❌ Erro semântico: {se}")
+            print(f"Erro semântico: {se}")
 
     except FileNotFoundError:
-        print("❌ Erro: Arquivo 'entrada.txt' não encontrado.")
+        print("Erro: Arquivo 'entrada.txt' não encontrado.")
     except Exception as e:
-        print(f"❌ Ocorreu um erro: {e}")
-        
+        print(f"Ocorreu um erro: {e}")
+        import traceback
+        traceback.print_exc()
+
 
 if __name__ == "__main__":
     main()
