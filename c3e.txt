@@ -1,10 +1,17 @@
 channel_decl calculadora, computador1, computador2
-param 3
+param 10
 param 2
 param 1
 send calculadora, 3
 receive calculadora, a, b, c
+# BEGIN PARALLEL BLOCK
 t0 = a + 2
 a = t0
-t1 = b + a
+t1 = b * 3
 b = t1
+t2 = c - 5
+c = t2
+# END PARALLEL BLOCK
+t3 = a + b
+t4 = t3 + c
+a = t4

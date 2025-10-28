@@ -1,9 +1,18 @@
+# Declarações iniciais
 c_channel calculadora computador1 computador2
 
-calculadora.send(1,2,3)
+calculadora.send(1, 2, 10)
+calculadora.receive(a, b, c)
 
-calculadora.receive(a,b,c) 
+# Bloco sequencial principal
+SEQ:
+    # Bloco paralelo com cálculos independentes
+    PAR:
+        a = a + 2       # Usa a=1, calcula a=3
+        b = b * 3       # Usa b=2, calcula b=6
+        c = c - 5       # Usa c=10, calcula c=5
 
-a = a + 2
-b = b + a
-#git tá bugado, recomittando
+    # Esta operação ocorre *depois* que o PAR terminar
+    # (devido à indentação sob o SEQ, mas não sob o PAR)
+    # Ela depende dos novos valores de a, b, e c.
+    a = a + b + c     # a = 3 + 6 + 5 = 14

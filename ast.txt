@@ -11,7 +11,7 @@ program
       number
         '2'
       number
-        '3'
+        '10'
     channel_receive
       'calculadora'
       id
@@ -20,19 +20,43 @@ program
         'b'
       id
         'c'
-    assignment
-      'a'
-      binop
-        '+'
-        id
+    seq_stmt
+      stmts
+        par_stmt
+          stmts
+            assignment
+              'a'
+              binop
+                '+'
+                id
+                  'a'
+                number
+                  '2'
+            assignment
+              'b'
+              binop
+                '*'
+                id
+                  'b'
+                number
+                  '3'
+            assignment
+              'c'
+              binop
+                '-'
+                id
+                  'c'
+                number
+                  '5'
+        assignment
           'a'
-        number
-          '2'
-    assignment
-      'b'
-      binop
-        '+'
-        id
-          'b'
-        id
-          'a'
+          binop
+            '+'
+            binop
+              '+'
+              id
+                'a'
+              id
+                'b'
+            id
+              'c'
