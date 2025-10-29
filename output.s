@@ -8,9 +8,7 @@
 _start:
     ldr sp, =0x8000
     bl main
-    mov r0, #0
-    mov r7, #1
-    svc 0
+    b .
 
 .return_exit:
     mov sp, fp
