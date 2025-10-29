@@ -1,4 +1,4 @@
-# AJEITAR PONTO FLUTUANTE
+# AJEITAR PONTO FLUTUANTE - SEM ELE, ESSE CÓDIGO NÃO VAI RODAR NÃO!
 # ---------- Funções utilitárias ----------
 
 def relu(x):
