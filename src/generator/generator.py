@@ -1,7 +1,6 @@
 class CodeGenerator:
     """
     Gera Código de 3 Endereços (C3E) a partir de uma AST semanticamente validada.
-
     """
     def __init__(self):
         self.instructions = []  # A lista de instruções C3E geradas
@@ -31,7 +30,7 @@ class CodeGenerator:
     # ===========================
     # Ponto de Entrada e Visitor
     # ===========================
-    def generate(self, node):
+    def generate(self, node):  # MÉTODO ADICIONADO AQUI
         """Ponto de entrada: inicia a geração e retorna a lista de instruções."""
         self.visit(node)
         return self.instructions
@@ -79,10 +78,17 @@ class CodeGenerator:
     # ========================================
     # Visitor para EXPRESSÕES
     # ========================================
-    def visit_number(self, node): return node[1]
-    def visit_string(self, node): return node[1]
-    def visit_boolean(self, node): return node[1]
-    def visit_id(self, node): return node[1]
+    def visit_number(self, node): 
+        return node[1]
+    
+    def visit_string(self, node): 
+        return node[1]
+    
+    def visit_boolean(self, node): 
+        return node[1]
+    
+    def visit_id(self, node): 
+        return node[1]
 
     def visit_binop(self, node):
         # ("binop", op, left, right)

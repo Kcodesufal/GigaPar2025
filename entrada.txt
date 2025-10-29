@@ -1,18 +1,42 @@
-# Declarações iniciais
+# Define uma função que aceita 3 parâmetros
+def calcular(x, y, operacao):
+    # Usa um if para comparar uma string
+    if (operacao == "soma"):
+        # Chama o print com múltiplos argumentos (string e expressão)
+        print("O resultado da soma eh:", x + y)
+        return x + y
+    else:
+        print("Operacao nao reconhecida")
 c_channel calculadora computador1 computador2
 
-calculadora.send(1, 2, 10)
-calculadora.receive(a, b, c)
-
-# Bloco sequencial principal
-SEQ:
-    # Bloco paralelo com cálculos independentes
+# Função principal para organizar o código
+def main():
+    # Declara e atribui valores a variáveis
+    a = 25
+    b = 17
+    # Chama a função 'calcular' com 3 argumentos de tipos diferentes
+    x = calcular(a, b, "soma")*15
+    i = 0
+    for (i; i < 3; i = i + 1):
+        print(i)
     PAR:
-        a = a + 2       # Usa a=1, calcula a=3
-        b = b * 3       # Usa b=2, calcula b=6
-        c = c - 5       # Usa c=10, calcula c=5
+        print(i)
+        print(a)
+    print("hiii, i'm testing some stuff here!")
+    x = 1
+    print(x)
+    b = a - x + a/15
+    c_channel serverclient c1 c2
+    c1.send(1,2,3,4,a)
+    c2.receive(y,i,j,k,l)
+    print(y)
+    print(c2)
+    return 1
+calculadora.send(1,2,3)
 
-    # Esta operação ocorre *depois* que o PAR terminar
-    # (devido à indentação sob o SEQ, mas não sob o PAR)
-    # Ela depende dos novos valores de a, b, e c.
-    a = a + b + c     # a = 3 + 6 + 5 = 14
+calculadora.receive(a,b,c) 
+
+
+# teste
+a = a + 2
+b = b + a
