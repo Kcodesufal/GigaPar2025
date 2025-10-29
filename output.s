@@ -50,7 +50,7 @@ L2:
     add sp, sp, #256
     pop {fp, pc}
 L0:
-    @ Instrução C3E não reconhecida: channel_decl calculadora, computador1, computador2
+    @ Declaração de canal ignorada: channel_decl calculadora, computador1, computador2
     b L3
 main:
     push {fp, lr}
@@ -108,7 +108,7 @@ L5:
     sub r0, r0, r1
     str r0, [fp, #-72]
     ldr r0, [fp, #-4]
-    mov r1, #15
+    mov r1, #2
     mov r2, #0
     .L_div_95:
     cmp r0, r1
@@ -125,14 +125,14 @@ L5:
     str r0, [fp, #-80]
     ldr r0, [fp, #-80]
     str r0, [fp, #-8]
-    @ Instrução C3E não reconhecida: channel_decl serverclient, c1, c2
+    @ Declaração de canal ignorada: channel_decl serverclient, c1, c2
     @ Operação de envio: send c1, 5
     nop
     @ Operação de recepção: receive c2, y, i, j, k, l
     ldr r0, [fp, #-40]
-    str r0, [fp, #-116]
-    ldr r0, [fp, #-40]
     str r0, [fp, #-124]
+    ldr r0, [fp, #-40]
+    str r0, [fp, #-132]
     mov r0, #1
     b .return_exit
     b L3
@@ -146,12 +146,12 @@ L3:
     ldr r0, [fp, #-4]
     mov r1, #2
     add r0, r0, r1
-    str r0, [fp, #-132]
-    ldr r0, [fp, #-132]
+    str r0, [fp, #-144]
+    ldr r0, [fp, #-144]
     str r0, [fp, #-4]
     ldr r0, [fp, #-8]
     ldr r1, [fp, #-4]
     add r0, r0, r1
-    str r0, [fp, #-136]
-    ldr r0, [fp, #-136]
+    str r0, [fp, #-148]
+    ldr r0, [fp, #-148]
     str r0, [fp, #-8]

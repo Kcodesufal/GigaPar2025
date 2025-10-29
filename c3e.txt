@@ -43,19 +43,19 @@ t9 = i + 1
 i = t9
 goto L4
 L5:
-# BEGIN PARALLEL BLOCK
+BEGIN_PARALLEL
 param i
 t10 = call print, 1
 param a
 t11 = call print, 1
-# END PARALLEL BLOCK
+END_PARALLEL
 param "hiii, i'm testing some stuff here!"
 t12 = call print, 1
 x = 1
 param x
 t13 = call print, 1
 t14 = a - x
-t15 = a / 15
+t15 = a / 2
 t16 = t14 + t15
 b = t16
 channel_decl serverclient, c1, c2

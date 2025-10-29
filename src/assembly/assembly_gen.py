@@ -1,7 +1,12 @@
 class AssemblyGenerator:
     """
     Gera código Assembly ARMv7 a partir de Código de 3 Endereços (C3E).
-    Versão corrigida com suporte a loops, comparações e divisão segura.
+    Suporte a:
+      - Loops, comparações, funções
+      - Comparações de strings (pseudo-código)
+      - Send/Receive de canais (aloca variáveis, nop)
+      - Declaração de canais como comentários
+      - Blocos paralelos e sequenciais como comentários
     """
 
     def __init__(self):
@@ -155,11 +160,23 @@ class AssemblyGenerator:
         if parts[0] == "receive": 
             self.handle_receive(instr)
             return
-        if "BEGIN PARALLEL" in instr: 
+
+        if "channel_decl" in instr:
+            self.handle_channel_decl(instr)
+            return
+
+        # Suporte a blocos paralelos e sequenciais como comentários
+        if "BEGIN_PARALLEL" in instr: 
             self.emit_comment("INÍCIO DE BLOCO PARALELO")
             return
-        if "END PARALLEL" in instr: 
+        if "END_PARALLEL" in instr: 
             self.emit_comment("FIM DE BLOCO PARALELO")
+            return
+        if "BEGIN_SEQUENCE" in instr:
+            self.emit_comment("INÍCIO DE BLOCO SEQUENCIAL")
+            return
+        if "END_SEQUENCE" in instr:
+            self.emit_comment("FIM DE BLOCO SEQUENCIAL")
             return
 
         self.emit_comment(f"Instrução C3E não reconhecida: {instr}")
@@ -172,7 +189,11 @@ class AssemblyGenerator:
         dest = left.strip()
         right = right.strip()
 
-        # Operadores aritméticos
+        # Comparação de strings
+        if '"' in right:
+            self.handle_string_comparison(dest, left, right)
+            return
+
         for op in ['+', '-', '*', '/']:
             if op in right:
                 lhs, rhs = right.split(op)
@@ -187,10 +208,9 @@ class AssemblyGenerator:
                 elif op == '*':
                     self.emit("mul r0, r0, r1")
                 elif op == '/':
-                    # Divisão segura sem udiv
                     div_label = f".L_div_{len(self.asm_code)}"
                     done_label = f".L_div_done_{len(self.asm_code)}"
-                    self.emit("mov r2, #0")       # quociente
+                    self.emit("mov r2, #0")
                     self.emit(f"{div_label}:")
                     self.emit("cmp r0, r1")
                     self.emit(f"blt {done_label}")
@@ -202,7 +222,6 @@ class AssemblyGenerator:
                 self.store_from_register('r0', dest)
                 return
 
-        # Comparações lógicas: <,>,<=,>=,==,!=
         for op in ['<', '>', '<=', '>=', '==', '!=']:
             if op in right:
                 lhs, rhs = right.split(op)
@@ -210,8 +229,6 @@ class AssemblyGenerator:
                 rhs = rhs.strip()
                 self.load_to_register(lhs, 'r0')
                 self.load_to_register(rhs, 'r1')
-                true_label = f".L_true_{len(self.asm_code)}"
-                done_label = f".L_done_{len(self.asm_code)}"
                 self.emit(f"cmp r0, r1")
                 if op == '<':
                     self.emit(f"movlt r0, #1")
@@ -234,8 +251,12 @@ class AssemblyGenerator:
                 self.store_from_register('r0', dest)
                 return
 
-        # Atribuição direta
         self.load_to_register(right, 'r0')
+        self.store_from_register('r0', dest)
+
+    def handle_string_comparison(self, dest, left, right):
+        self.emit_comment(f"Comparação de string {left} == {right} não implementada")
+        self.emit("mov r0, #0")  # default: falso
         self.store_from_register('r0', dest)
 
     def handle_if_false(self, parts):
@@ -291,6 +312,9 @@ class AssemblyGenerator:
 
     def handle_send(self, instr):
         self.emit_comment(f"Operação de envio: {instr}")
+        parts = instr.replace(',', '').split()
+        for var in parts[1:]:
+            self.allocate_stack_var(var)
         self.emit("nop")
 
     def handle_receive(self, instr):
@@ -298,6 +322,9 @@ class AssemblyGenerator:
         parts = instr.replace(',', '').split()
         for var in parts[2:]:
             self.allocate_stack_var(var)
+
+    def handle_channel_decl(self, instr):
+        self.emit_comment(f"Declaração de canal ignorada: {instr}")
 
     # -------------------------
     # MONTAGEM FINAL

@@ -129,7 +129,7 @@ program
               id
                 'a'
               number
-                '15'
+                '2'
         channel_stmt
           'serverclient'
           'c1'
