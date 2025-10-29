@@ -92,7 +92,7 @@ def main():
                 print("✅ Geração de Assembly ARMv7 concluída! Salvo em 'output.s'.")
 
                 print("\n" + "=" * 60)
-                print("COMPILAÇÃO COMPLETA!")
+                print("COMPILAÇÃO COMPLETA! ---", test)
                 print("=" * 60)
                 print("Arquivos gerados:")
                 print("   • tokens.txt      - Tokens do código")

@@ -1,64 +1,65 @@
-computador_1 = 50000
-computador_2 = 50001
-channel_decl calculadora, computador_1, computador_2
 goto L0
-calcular:
+calcular_fatorial:
 begin_func
-get_param operacao
-get_param valor1
-get_param valor2
-t0 = operacao == "+"
-if_false t0 goto L1
-t1 = valor1 + valor2
-return t1
-goto L0
-goto L2
+get_param n
+resultado = 1
+i = 1
 L1:
-t2 = operacao == "-"
-if_false t2 goto L3
-t3 = valor1 - valor2
-return t3
-goto L0
-goto L4
-L3:
-t4 = operacao == "*"
-if_false t4 goto L5
-t5 = valor1 * valor2
-return t5
-goto L0
-goto L6
-L5:
-param "Operacao invalida"
-t6 = call print, 1
-return 0
-goto L0
-L6:
-L4:
+t0 = i <= n
+if_false t0 goto L2
+t1 = resultado * i
+resultado = t1
+t2 = i + 1
+i = t2
+goto L1
 L2:
+param resultado
+param "="
+param n
+param "Fatorial de"
+t3 = call print, 4
+return resultado
+goto L0
 return
 end_func
 L0:
-BEGIN_SEQUENCE
-goto L7
-main:
+goto L3
+calcular_fibonacci:
 begin_func
-param "Digite a operacao (+, -, *, /):"
-t7 = call print, 1
-operacao = "+"
-valor1 = 10
-valor2 = 5
-param 0
-param valor2
-param valor1
-param operacao
-send calculadora, 4
-param "Solicitacao enviada ao servidor!"
-t8 = call print, 1
-receive calculadora, operacao, valor1, valor2, resultado
-param resultado
-param "Resultado recebido:"
-t9 = call print, 2
+get_param limite
+a = 0
+b = 1
+i = 0
+L4:
+t4 = i < limite
+if_false t4 goto L5
+param a
+param "="
+param i
+param "Fibonacci"
+t5 = call print, 4
+t6 = a + b
+proximo = t6
+a = b
+b = proximo
+t7 = i + 1
+i = t7
+goto L4
+L5:
+return a
+goto L3
 return
 end_func
-L7:
-END_SEQUENCE
+L3:
+goto L6
+main:
+begin_func
+BEGIN_PARALLEL
+param 5
+t8 = call calcular_fatorial, 1
+param 8
+t9 = call calcular_fibonacci, 1
+END_PARALLEL
+return
+end_func
+L6:
