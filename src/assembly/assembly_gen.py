@@ -3,7 +3,7 @@ class AssemblyGenerator:
     Gera código Assembly ARMv7 a partir de Código de 3 Endereços (C3E).
     Suporte a:
       - Loops, comparações, funções
-      - Comparações de strings (pseudo-código)
+      - Comparações de strings reais
       - Send/Receive de canais (aloca variáveis, nop)
       - Declaração de canais como comentários
       - Blocos paralelos e sequenciais como comentários
@@ -19,6 +19,7 @@ class AssemblyGenerator:
         self.current_function = None
         self.function_counter = 0
         self.labels_defined = set()
+        self.string_compare_label = "strcmp_func"
 
         self.temp_registers = ['r4', 'r5', 'r6', 'r7', 'r8', 'r9', 'r10']
         self.used_callee_saved_regs = set()
@@ -112,6 +113,9 @@ class AssemblyGenerator:
         self.emit_comment("Arquitetura: ARMv7")
         self.asm_code.append("")
 
+        # Adiciona função de comparação de strings
+        self.add_string_compare_func()
+
         for instr in c3e_instructions:
             self.process_instruction(instr)
 
@@ -119,7 +123,7 @@ class AssemblyGenerator:
 
     def process_instruction(self, instr):
         parts = instr.strip().split()
-        if not parts: 
+        if not parts:
             return
 
         if instr.endswith(':'):
@@ -130,34 +134,34 @@ class AssemblyGenerator:
             self.handle_assignment(instr)
             return
 
-        if parts[0] == "if_false": 
+        if parts[0] == "if_false":
             self.handle_if_false(parts)
             return
-        if parts[0] == "goto": 
+        if parts[0] == "goto":
             self.handle_goto(parts)
             return
-        if parts[0] == "param": 
+        if parts[0] == "param":
             self.handle_param(parts)
             return
-        if "call" in instr and '=' in instr: 
+        if "call" in instr and '=' in instr:
             self.handle_call(instr)
             return
-        if parts[0] == "begin_func": 
+        if parts[0] == "begin_func":
             self.handle_begin_func(instr)
             return
-        if parts[0] == "end_func": 
+        if parts[0] == "end_func":
             self.handle_end_func()
             return
-        if parts[0] == "get_param": 
+        if parts[0] == "get_param":
             self.handle_get_param(parts)
             return
-        if parts[0] == "return": 
+        if parts[0] == "return":
             self.handle_return(parts)
             return
-        if parts[0] == "send": 
+        if parts[0] == "send":
             self.handle_send(instr)
             return
-        if parts[0] == "receive": 
+        if parts[0] == "receive":
             self.handle_receive(instr)
             return
 
@@ -166,10 +170,10 @@ class AssemblyGenerator:
             return
 
         # Suporte a blocos paralelos e sequenciais como comentários
-        if "BEGIN_PARALLEL" in instr: 
+        if "BEGIN_PARALLEL" in instr:
             self.emit_comment("INÍCIO DE BLOCO PARALELO")
             return
-        if "END_PARALLEL" in instr: 
+        if "END_PARALLEL" in instr:
             self.emit_comment("FIM DE BLOCO PARALELO")
             return
         if "BEGIN_SEQUENCE" in instr:
@@ -191,8 +195,25 @@ class AssemblyGenerator:
 
         # Comparação de strings
         if '"' in right:
-            self.handle_string_comparison(dest, left, right)
-            return
+            # Se for uma comparação de strings "==" 
+            if '==' in right:
+                lhs, rhs = right.split('==')
+                lhs = lhs.strip()
+                rhs = rhs.strip()
+                lhs_loc = self.get_location(lhs)
+                rhs_loc = self.get_location(rhs)
+                dest_loc = self.allocate_stack_var(dest)
+                self.emit_comment(f"Comparação de strings real: {lhs} == {rhs}")
+                self.emit(f"ldr r0, ={lhs_loc}")
+                self.emit(f"ldr r1, ={rhs_loc}")
+                self.emit(f"ldr r2, ={dest_loc}")
+                self.emit(f"bl {self.string_compare_label}")
+                return
+            else:
+                # apenas atribuição de string
+                self.load_to_register(right, 'r0')
+                self.store_from_register('r0', dest)
+                return
 
         for op in ['+', '-', '*', '/']:
             if op in right:
@@ -254,10 +275,28 @@ class AssemblyGenerator:
         self.load_to_register(right, 'r0')
         self.store_from_register('r0', dest)
 
-    def handle_string_comparison(self, dest, left, right):
-        self.emit_comment(f"Comparação de string {left} == {right} não implementada")
-        self.emit("mov r0, #0")  # default: falso
-        self.store_from_register('r0', dest)
+    def add_string_compare_func(self):
+        self.emit_comment("Função strcmp_func: compara strings r0 e r1, resultado em r2")
+        self.emit_label(self.string_compare_label)
+        self.emit("push {r4, lr}")
+        self.emit_label(f"{self.string_compare_label}_loop")
+        self.emit("ldrb r3, [r0], #1")
+        self.emit("ldrb r4, [r1], #1")
+        self.emit("cmp r3, r4")
+        self.emit(f"bne {self.string_compare_label}_false")
+        self.emit("cmp r3, #0")
+        self.emit(f"beq {self.string_compare_label}_true")
+        self.emit(f"b {self.string_compare_label}_loop")
+        self.emit_label(f"{self.string_compare_label}_false")
+        self.emit("mov r3, #0")
+        self.emit("str r3, [r2]")
+        self.emit(f"b {self.string_compare_label}_end")
+        self.emit_label(f"{self.string_compare_label}_true")
+        self.emit("mov r3, #1")
+        self.emit("str r3, [r2]")
+        self.emit_label(f"{self.string_compare_label}_end")
+        self.emit("pop {r4, lr}")
+        self.emit("bx lr")
 
     def handle_if_false(self, parts):
         cond, label = parts[1], parts[3]
@@ -322,6 +361,7 @@ class AssemblyGenerator:
         parts = instr.replace(',', '').split()
         for var in parts[2:]:
             self.allocate_stack_var(var)
+        self.emit("nop")
 
     def handle_channel_decl(self, instr):
         self.emit_comment(f"Declaração de canal ignorada: {instr}")

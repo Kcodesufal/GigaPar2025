@@ -17,6 +17,27 @@ _start:
     @ Código gerado pelo compilador GigaPar2025
     @ Arquitetura: ARMv7
 
+    @ Função strcmp_func: compara strings r0 e r1, resultado em r2
+strcmp_func:
+    push {r4, lr}
+strcmp_func_loop:
+    ldrb r3, [r0], #1
+    ldrb r4, [r1], #1
+    cmp r3, r4
+    bne strcmp_func_false
+    cmp r3, #0
+    beq strcmp_func_true
+    b strcmp_func_loop
+strcmp_func_false:
+    mov r3, #0
+    str r3, [r2]
+    b strcmp_func_end
+strcmp_func_true:
+    mov r3, #1
+    str r3, [r2]
+strcmp_func_end:
+    pop {r4, lr}
+    bx lr
     b L0
 calcular:
 func_0:
@@ -110,13 +131,13 @@ L5:
     ldr r0, [fp, #-4]
     mov r1, #2
     mov r2, #0
-    .L_div_95:
+    .L_div_116:
     cmp r0, r1
-    blt .L_div_done_95
+    blt .L_div_done_116
     sub r0, r0, r1
     add r2, r2, #1
-    b .L_div_95
-    .L_div_done_95:
+    b .L_div_116
+    .L_div_done_116:
     mov r0, r2
     str r0, [fp, #-76]
     ldr r0, [fp, #-72]
@@ -129,6 +150,7 @@ L5:
     @ Operação de envio: send c1, 5
     nop
     @ Operação de recepção: receive c2, y, i, j, k, l
+    nop
     ldr r0, [fp, #-40]
     str r0, [fp, #-124]
     ldr r0, [fp, #-40]
@@ -143,6 +165,7 @@ L3:
     @ Operação de envio: send calculadora, 3
     nop
     @ Operação de recepção: receive calculadora, a, b, c
+    nop
     ldr r0, [fp, #-4]
     mov r1, #2
     add r0, r0, r1
