@@ -1,0 +1,11 @@
+#Implementar um programa na linguagem Minipar para o código seguinte
+#(python) da implementação do fatorial de 5
+#Somente usando funções da Linguagem MINIPAR
+
+# Cálculo do fatorial de 5 de forma iterativa
+def main():
+    numero = 5
+    fatorial = 1
+    for (i = 1; i < numero + 1; i = i + 1):
+        fatorial = i * fatorial
+        print("O fatorial de", numero, "é", fatorial)

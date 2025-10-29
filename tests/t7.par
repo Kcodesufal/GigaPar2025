@@ -1,0 +1,15 @@
+#Implementar um programa na linguagem Minipar para o código seguinte
+#(python) da implementação do serie de Fibonacci com 5 termos
+#Somente usando funções da Linguagem MINIPAR
+
+# Série de Fibonacci com 5 termos
+def main():
+    n = 5
+    a = 0
+    b = 1
+    print("Série de Fibonacci com", n, "termos:")
+    for (i = 0; i < n; i = i + 1):
+        print(a)
+        proximo = a + b
+        a = b
+        b = proximo

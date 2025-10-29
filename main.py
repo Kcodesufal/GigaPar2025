@@ -60,7 +60,7 @@ def write_assembly_to_file(asm_code, filename="output.s"):
 
 
 def main():
-    testes = ["entrada.txt", "t1.par", "t2.par","t3.par","t5.par"]
+    testes = ["entrada.txt", "t1.par", "t2.par","t3.par","t5.par","t6.par","t7.par","t8.par"]
     for test in testes:
         try:
             with open("tests/" + test, "r", encoding="utf-8") as f:
@@ -110,6 +110,11 @@ def main():
             print(f"Ocorreu um erro: {e}")
             import traceback
             traceback.print_exc()
+        print ("Prosseguir para o próximo? y")
+        if input() == 'y':
+            continue
+        else:
+            break
 
 
 if __name__ == "__main__":
