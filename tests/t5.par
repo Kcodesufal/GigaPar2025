@@ -1,0 +1,107 @@
+# AJEITAR PONTO FLUTUANTE
+# ---------- Funções utilitárias ----------
+
+def relu(x):
+    if (x >= 0):
+        return x
+    else:
+        return 0
+def pow(x,y):
+    i = x
+    if (y > 0):
+        for (y; y > 0; y = y - 1):
+            i = x*i
+    else:
+        for (y; y < 0; y = y + 1):
+            i = i/x
+    return i
+def sigmoid(x):
+    e = 2.71828
+    x = 0 - x
+    return 1 / (1 + (pow(e,x)))
+
+# ---------- Função principal ----------
+
+def main():
+    # Simulação de produtos e histórico
+    # Cada produto: 1 se comprado, 0 se não comprado
+    # Exemplo de vetor binário de entrada (histórico codificado)
+    input1 = 1   # Smartphone
+    input2 = 0   # Laptop
+    input3 = 1   # Micro-ondas
+    input4 = 0   # Ficção científica
+
+    # Configuração da rede neural
+    input_size = 4
+    hidden_size = 3
+    output_size = 4
+
+    # Pesos iniciais (fixos, simplificados)
+    w11 = 0.5
+    w12 = 0.5
+    w13 = 0.5
+    w21 = 0.5
+    w22 = 0.5
+    w23 = 0.5
+    w31 = 0.5
+    w32 = 0.5
+    w33 = 0.5
+    w41 = 0.5
+    w42 = 0.5
+    w43 = 0.5
+
+    b1 = 0.5
+    b2 = 0.5
+    b3 = 0.5
+
+    # ---------- Camada Oculta ----------
+    z1 = (input1*w11 + input2*w21 + input3*w31 + input4*w41) + b1
+    z2 = (input1*w12 + input2*w22 + input3*w32 + input4*w42) + b2
+    z3 = (input1*w13 + input2*w23 + input3*w33 + input4*w43) + b3
+
+    a1 = relu(z1)
+    a2 = relu(z2)
+    a3 = relu(z3)
+
+    # ---------- Camada de Saída ----------
+    # Mesma lógica: cada saída é combinação dos 3 neurônios da camada oculta
+    v11 = 0.5
+    v12 = 0.5
+    v13 = 0.5
+    v21 = 0.5
+    v22 = 0.5
+    v23 = 0.5
+    v31 = 0.5
+    v32 = 0.5
+    v33 = 0.5
+    v41 = 0.5
+    v42 = 0.5
+    v43 = 0.5
+
+    bo1 = 0.5
+    bo2 = 0.5
+    bo3 = 0.5
+    bo4 = 0.5
+
+    z_out1 = (a1*v11 + a2*v21 + a3*v31) + bo1
+    z_out2 = (a1*v12 + a2*v22 + a3*v32) + bo2
+    z_out3 = (a1*v13 + a2*v23 + a3*v33) + bo3
+    z_out4 = (a1*v13 + a2*v23 + a3*v43) + bo4
+
+    o1 = sigmoid(z_out1)
+    o2 = sigmoid(z_out2)
+    o3 = sigmoid(z_out3)
+    o4 = sigmoid(z_out4)
+
+    # ---------- Impressão de resultados ----------
+    print("Saídas da Rede Neural (probabilidades de recomendação):")
+    print("Smartphone:", o1)
+    print("Laptop:", o2)
+    print("Micro-ondas:", o3)
+    print("Ficção científica:", o4)
+
+    # ---------- Lógica de recomendação ----------
+    if (o2 > 0.5):
+        print("Recomendação:", "Laptop")
+    if (o4 > 0.5):
+        print("Recomendação:", "Ficção científica")

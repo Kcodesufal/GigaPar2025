@@ -60,54 +60,56 @@ def write_assembly_to_file(asm_code, filename="output.s"):
 
 
 def main():
-    try:
-        with open("entrada.txt", "r", encoding="utf-8") as f:
-            code = f.read()
-
-        tokens = lexer.lexer(code)
-        write_tokens_to_file(tokens)
-        print("✅ Análise léxica concluída com sucesso! Tokens salvos em 'tokens.txt'.")
-
-        p = parser.Parser(tokens)
-        ast = p.parse()
-        write_ast_to_file(ast)
-        print("✅ Análise sintática concluída com sucesso! AST salva em 'ast.txt'.")
-
+    testes = ["entrada.txt", "t1.par", "t2.par","t3.par","t5.par"]
+    for test in testes:
         try:
+            with open("tests/" + test, "r", encoding="utf-8") as f:
+                code = f.read()
 
-            analyzer = semantic.SemanticAnalyzer(ast)
-            analyzer.analyze()
-            print("✅ Análise semântica concluída com sucesso!")
+            tokens = lexer.lexer(code)
+            write_tokens_to_file(tokens)
+            print("✅ Análise léxica concluída com sucesso! Tokens salvos em 'tokens.txt'.")
 
-            code_gen = generator.CodeGenerator()
-            three_address_code = code_gen.generate(ast)
-            write_c3e_to_file(three_address_code)
-            print("✅ Geração de código de 3 endereços concluída! Salvo em 'c3e.txt'.")
+            p = parser.Parser(tokens)
+            ast = p.parse()
+            write_ast_to_file(ast)
+            print("✅ Análise sintática concluída com sucesso! AST salva em 'ast.txt'.")
 
-            asm_gen = assembly_gen.AssemblyGenerator()
-            assembly_code = asm_gen.generate(three_address_code)
-            write_assembly_to_file(assembly_code)
-            print("✅ Geração de Assembly ARMv7 concluída! Salvo em 'output.s'.")
+            try:
 
-            print("\n" + "=" * 60)
-            print("COMPILAÇÃO COMPLETA!")
-            print("=" * 60)
-            print("Arquivos gerados:")
-            print("   • tokens.txt      - Tokens do código")
-            print("   • ast.txt         - Árvore Sintática Abstrata")
-            print("   • c3e.txt         - Código de 3 Endereços")
-            print("   • output.s        - Código Assembly x86-64")
-            print("=" * 60)
+                analyzer = semantic.SemanticAnalyzer(ast)
+                analyzer.analyze()
+                print("✅ Análise semântica concluída com sucesso!")
 
-        except semantic.SemanticError as se:
-            print(f"Erro semântico: {se}")
+                code_gen = generator.CodeGenerator()
+                three_address_code = code_gen.generate(ast)
+                write_c3e_to_file(three_address_code)
+                print("✅ Geração de código de 3 endereços concluída! Salvo em 'c3e.txt'.")
 
-    except FileNotFoundError:
-        print("Erro: Arquivo 'entrada.txt' não encontrado.")
-    except Exception as e:
-        print(f"Ocorreu um erro: {e}")
-        import traceback
-        traceback.print_exc()
+                asm_gen = assembly_gen.AssemblyGenerator()
+                assembly_code = asm_gen.generate(three_address_code)
+                write_assembly_to_file(assembly_code)
+                print("✅ Geração de Assembly ARMv7 concluída! Salvo em 'output.s'.")
+
+                print("\n" + "=" * 60)
+                print("COMPILAÇÃO COMPLETA!")
+                print("=" * 60)
+                print("Arquivos gerados:")
+                print("   • tokens.txt      - Tokens do código")
+                print("   • ast.txt         - Árvore Sintática Abstrata")
+                print("   • c3e.txt         - Código de 3 Endereços")
+                print("   • output.s        - Código Assembly x86-64")
+                print("=" * 60)
+
+            except semantic.SemanticError as se:
+                print(f"Erro semântico: {se}")
+
+        except FileNotFoundError:
+            print("Erro: Arquivo 'entrada.txt' não encontrado.")
+        except Exception as e:
+            print(f"Ocorreu um erro: {e}")
+            import traceback
+            traceback.print_exc()
 
 
 if __name__ == "__main__":

@@ -1,0 +1,30 @@
+
+
+# Thread 1: cálculo do fatorial de um número
+def calcular_fatorial(n):
+    resultado = 1
+    i = 1
+    for (i; i <= n; i = i + 1):
+        resultado = resultado * i
+    print("Fatorial de", n, "=", resultado)
+    return resultado
+#Thread 2: cálculo da série de Fibonacci
+def calcular_fibonacci(limite):
+    a = 0
+    b = 1
+    i = 0
+    for (i; i < limite; i = i + 1):
+        print("Fibonacci", i, "=", a)
+        proximo = a + b
+        a = b
+        b = proximo
+    return a
+def main():
+    # Chamadas paralelas (executadas simultaneamente)
+    PAR:
+    # Thread 1: cálculo do fatorial de um número
+        calcular_fatorial(5)
+    #Thread 2: cálculo da série de Fibonacci
+        calcular_fibonacci(8)
+
+# Fim do programa

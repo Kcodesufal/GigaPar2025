@@ -1,86 +1,213 @@
 goto L0
-calcular:
+relu:
 begin_func
 get_param x
-get_param y
-get_param operacao
-t0 = operacao == "soma"
+t0 = x >= 0
 if_false t0 goto L1
-t1 = x + y
-param t1
-param "O resultado da soma eh:"
-t2 = call print, 2
-t3 = x + y
-return t3
+return x
 goto L0
 goto L2
 L1:
-param "Operacao nao reconhecida"
-t4 = call print, 1
+return 0
+goto L0
 L2:
 return
 end_func
 L0:
-channel_decl calculadora, computador1, computador2
 goto L3
-main:
+pow:
 begin_func
-a = 25
-b = 17
-param "soma"
-param b
-param a
-t5 = call calcular, 3
-t6 = t5 * 15
-x = t6
-i = 0
+get_param x
+get_param y
+i = x
+t1 = y > 0
+if_false t1 goto L4
+L6:
+t2 = y > 0
+if_false t2 goto L7
+t3 = x * i
+i = t3
+t4 = y - 1
+y = t4
+goto L6
+L7:
+goto L5
 L4:
-t7 = i < 3
-if_false t7 goto L5
-param i
-t8 = call print, 1
-t9 = i + 1
-i = t9
-goto L4
+L8:
+t5 = y < 0
+if_false t5 goto L9
+t6 = i / x
+i = t6
+t7 = y + 1
+y = t7
+goto L8
+L9:
 L5:
-BEGIN_PARALLEL
-param i
-t10 = call print, 1
-param a
-t11 = call print, 1
-END_PARALLEL
-param "hiii, i'm testing some stuff here!"
-t12 = call print, 1
-x = 1
-param x
-t13 = call print, 1
-t14 = a - x
-t15 = a / 2
-t16 = t14 + t15
-b = t16
-channel_decl serverclient, c1, c2
-param a
-param 4
-param 3
-param 2
-param 1
-send c1, 5
-receive c2, y, i, j, k, l
-param y
-t17 = call print, 1
-param c2
-t18 = call print, 1
-return 1
+return i
 goto L3
 return
 end_func
 L3:
-param 3
-param 2
-param 1
-send calculadora, 3
-receive calculadora, a, b, c
-t19 = a + 2
-a = t19
-t20 = b + a
-b = t20
+goto L10
+sigmoid:
+begin_func
+get_param x
+e = 2.71828
+t8 = 0 - x
+x = t8
+param x
+param e
+t9 = call pow, 2
+t10 = 1 + t9
+t11 = 1 / t10
+return t11
+goto L10
+return
+end_func
+L10:
+goto L11
+main:
+begin_func
+input1 = 1
+input2 = 0
+input3 = 1
+input4 = 0
+input_size = 4
+hidden_size = 3
+output_size = 4
+w11 = 0.5
+w12 = 0.5
+w13 = 0.5
+w21 = 0.5
+w22 = 0.5
+w23 = 0.5
+w31 = 0.5
+w32 = 0.5
+w33 = 0.5
+w41 = 0.5
+w42 = 0.5
+w43 = 0.5
+b1 = 0.5
+b2 = 0.5
+b3 = 0.5
+t12 = input1 * w11
+t13 = input2 * w21
+t14 = t12 + t13
+t15 = input3 * w31
+t16 = t14 + t15
+t17 = input4 * w41
+t18 = t16 + t17
+t19 = t18 + b1
+z1 = t19
+t20 = input1 * w12
+t21 = input2 * w22
+t22 = t20 + t21
+t23 = input3 * w32
+t24 = t22 + t23
+t25 = input4 * w42
+t26 = t24 + t25
+t27 = t26 + b2
+z2 = t27
+t28 = input1 * w13
+t29 = input2 * w23
+t30 = t28 + t29
+t31 = input3 * w33
+t32 = t30 + t31
+t33 = input4 * w43
+t34 = t32 + t33
+t35 = t34 + b3
+z3 = t35
+param z1
+t36 = call relu, 1
+a1 = t36
+param z2
+t37 = call relu, 1
+a2 = t37
+param z3
+t38 = call relu, 1
+a3 = t38
+v11 = 0.5
+v12 = 0.5
+v13 = 0.5
+v21 = 0.5
+v22 = 0.5
+v23 = 0.5
+v31 = 0.5
+v32 = 0.5
+v33 = 0.5
+v41 = 0.5
+v42 = 0.5
+v43 = 0.5
+bo1 = 0.5
+bo2 = 0.5
+bo3 = 0.5
+bo4 = 0.5
+t39 = a1 * v11
+t40 = a2 * v21
+t41 = t39 + t40
+t42 = a3 * v31
+t43 = t41 + t42
+t44 = t43 + bo1
+z_out1 = t44
+t45 = a1 * v12
+t46 = a2 * v22
+t47 = t45 + t46
+t48 = a3 * v32
+t49 = t47 + t48
+t50 = t49 + bo2
+z_out2 = t50
+t51 = a1 * v13
+t52 = a2 * v23
+t53 = t51 + t52
+t54 = a3 * v33
+t55 = t53 + t54
+t56 = t55 + bo3
+z_out3 = t56
+t57 = a1 * v13
+t58 = a2 * v23
+t59 = t57 + t58
+t60 = a3 * v43
+t61 = t59 + t60
+t62 = t61 + bo4
+z_out4 = t62
+param z_out1
+t63 = call sigmoid, 1
+o1 = t63
+param z_out2
+t64 = call sigmoid, 1
+o2 = t64
+param z_out3
+t65 = call sigmoid, 1
+o3 = t65
+param z_out4
+t66 = call sigmoid, 1
+o4 = t66
+param "Saídas da Rede Neural (probabilidades de recomendação):"
+t67 = call print, 1
+param o1
+param "Smartphone:"
+t68 = call print, 2
+param o2
+param "Laptop:"
+t69 = call print, 2
+param o3
+param "Micro-ondas:"
+t70 = call print, 2
+param o4
+param "Ficção científica:"
+t71 = call print, 2
+t72 = o2 > 0.5
+if_false t72 goto L12
+param "Laptop"
+param "Recomendação:"
+t73 = call print, 2
+L12:
+t74 = o4 > 0.5
+if_false t74 goto L13
+param "Ficção científica"
+param "Recomendação:"
+t75 = call print, 2
+L13:
+return
+end_func
+L11:

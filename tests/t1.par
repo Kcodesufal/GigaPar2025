@@ -1,0 +1,32 @@
+#programa-miniPar
+# Programa cliente-servidor de uma calculadora aritmética simples
+
+computador_1 = 50000
+computador_2 = 50001
+c_channel calculadora computador_1 computador_2
+
+def calcular(operacao, valor1, valor2):
+    if (operacao == "+"):
+        return valor1 + valor2
+    else:
+        if (operacao == "-"):
+            return valor1 - valor2
+        else:
+            if (operacao == "*"):
+                return valor1 * valor2
+            else:
+                print("Operacao invalida")
+                return 0
+
+SEQ:
+    def main ():
+        print("Digite a operacao (+, -, *, /):")
+        operacao = "+"
+        valor1 = 10
+        valor2 = 5
+
+        calculadora.send(operacao, valor1, valor2, 0)
+        print("Solicitacao enviada ao servidor!")
+
+        calculadora.receive(operacao, valor1, valor2, resultado)
+        print("Resultado recebido:", resultado)
