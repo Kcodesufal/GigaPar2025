@@ -1,0 +1,94 @@
+# Teste 8: Ordenação simples (Bubble Sort) para 5 elementos
+# Implementação sem arrays - usando variáveis individuais
+
+# Função para trocar se necessário
+def swap_if_greater(a, b):
+    if (a > b):
+        return b
+    else:
+        return a
+
+def get_greater(a, b):
+    if (a > b):
+        return a
+    else:
+        return b
+
+# Função principal
+def main():
+    print("Ordenacao de 5 elementos")
+
+    # Array inicial: [33, 12, 98, 5, 61]
+    v0 = 33
+    v1 = 12
+    v2 = 98
+    v3 = 5
+    v4 = 61
+
+    print("Array original:")
+    print(v0, v1, v2, v3, v4)
+
+    # Bubble Sort manual - Pass 1
+    temp = 0
+
+    # Compara v0 e v1
+    if (v0 > v1):
+        temp = v0
+        v0 = v1
+        v1 = temp
+
+    # Compara v1 e v2
+    if (v1 > v2):
+        temp = v1
+        v1 = v2
+        v2 = temp
+
+    # Compara v2 e v3
+    if (v2 > v3):
+        temp = v2
+        v2 = v3
+        v3 = temp
+
+    # Compara v3 e v4
+    if (v3 > v4):
+        temp = v3
+        v3 = v4
+        v4 = temp
+
+    # Pass 2
+    if (v0 > v1):
+        temp = v0
+        v0 = v1
+        v1 = temp
+
+    if (v1 > v2):
+        temp = v1
+        v1 = v2
+        v2 = temp
+
+    if (v2 > v3):
+        temp = v2
+        v2 = v3
+        v3 = temp
+
+    # Pass 3
+    if (v0 > v1):
+        temp = v0
+        v0 = v1
+        v1 = temp
+
+    if (v1 > v2):
+        temp = v1
+        v1 = v2
+        v2 = temp
+
+    # Pass 4
+    if (v0 > v1):
+        temp = v0
+        v0 = v1
+        v1 = temp
+
+    print("Array ordenado:")
+    print(v0, v1, v2, v3, v4)
+
+    print("Ordenacao concluida!")
