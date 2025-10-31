@@ -1,0 +1,190 @@
+# Teste 4: Rede Neural para aprender a função XOR
+# Implementação simplificada com uma camada oculta de 3 neurônios
+
+# Variáveis globais para armazenar resultados temporários
+h1_global = 0
+h2_global = 0
+h3_global = 0
+
+# Função sigmoid aproximada (sem exponencial)
+def sigmoid(x):
+    # Aproximação: sigmoid(x) ≈ 0.5 + x/(2*(1+|x|))
+    abs_x = x
+    if (x < 0):
+        abs_x = 0 - x
+
+    denom = 1 + abs_x
+    if (denom == 0):
+        denom = 1
+
+    result = x / denom
+    result = result / 2
+    result = result + 0.5
+    return result
+
+# Derivada da sigmoid (aproximada)
+def sigmoid_derivative(output):
+    # sigmoid'(x) = sigmoid(x) * (1 - sigmoid(x))
+    one_minus = 1 - output
+    return output * one_minus
+
+# Feedforward para um neurônio individual
+def neuronio_calc(entrada1, entrada2, peso1, peso2, bias):
+    soma = (entrada1 * peso1) + (entrada2 * peso2) + bias
+    return sigmoid(soma)
+
+# Feedforward para camada oculta (atualiza variáveis globais)
+def camada_oculta_calc(entrada1, entrada2, w11, w12, b1, w21, w22, b2, w31, w32, b3):
+    h1_global = neuronio_calc(entrada1, entrada2, w11, w12, b1)
+    h2_global = neuronio_calc(entrada1, entrada2, w21, w22, b2)
+    h3_global = neuronio_calc(entrada1, entrada2, w31, w32, b3)
+    return 0
+
+# Feedforward para camada de saída
+def camada_saida_calc(h1, h2, h3, wo1, wo2, wo3, bo):
+    soma = (h1 * wo1) + (h2 * wo2) + (h3 * wo3) + bo
+    return sigmoid(soma)
+
+# Função principal
+def main():
+    # Pesos da camada oculta
+    w11 = 0.5
+    w12 = 0.5
+    b1 = 0.1
+
+    w21 = 0.3
+    w22 = 0.7
+    b2 = 0.2
+
+    w31 = 0.8
+    w32 = 0.4
+    b3 = 0.15
+
+    # Pesos da camada de saída
+    wo1 = 0.6
+    wo2 = 0.5
+    wo3 = 0.7
+    bo = 0.25
+
+    taxa = 0.1
+    epocas = 5
+
+    print("Iniciando treinamento XOR")
+
+    # Loop de treinamento
+    epoca = 0
+    for (epoca; epoca < epocas; epoca = epoca + 1):
+        print("Epoca:", epoca)
+
+        # Treinamento exemplo 1: [0, 0] -> 0
+        in1 = 0
+        in2 = 0
+        desejado = 0
+
+        h1 = neuronio_calc(in1, in2, w11, w12, b1)
+        h2 = neuronio_calc(in1, in2, w21, w22, b2)
+        h3 = neuronio_calc(in1, in2, w31, w32, b3)
+        saida = camada_saida_calc(h1, h2, h3, wo1, wo2, wo3, bo)
+
+        erro = desejado - saida
+        delta = erro * sigmoid_derivative(saida)
+
+        wo1 = wo1 + (h1 * delta * taxa)
+        wo2 = wo2 + (h2 * delta * taxa)
+        wo3 = wo3 + (h3 * delta * taxa)
+        bo = bo + (delta * taxa)
+
+        # Exemplo 2: [0, 1] -> 1
+        in1 = 0
+        in2 = 1
+        desejado = 1
+
+        h1 = neuronio_calc(in1, in2, w11, w12, b1)
+        h2 = neuronio_calc(in1, in2, w21, w22, b2)
+        h3 = neuronio_calc(in1, in2, w31, w32, b3)
+        saida = camada_saida_calc(h1, h2, h3, wo1, wo2, wo3, bo)
+
+        erro = desejado - saida
+        delta = erro * sigmoid_derivative(saida)
+
+        wo1 = wo1 + (h1 * delta * taxa)
+        wo2 = wo2 + (h2 * delta * taxa)
+        wo3 = wo3 + (h3 * delta * taxa)
+        bo = bo + (delta * taxa)
+
+        # Exemplo 3: [1, 0] -> 1
+        in1 = 1
+        in2 = 0
+        desejado = 1
+
+        h1 = neuronio_calc(in1, in2, w11, w12, b1)
+        h2 = neuronio_calc(in1, in2, w21, w22, b2)
+        h3 = neuronio_calc(in1, in2, w31, w32, b3)
+        saida = camada_saida_calc(h1, h2, h3, wo1, wo2, wo3, bo)
+
+        erro = desejado - saida
+        delta = erro * sigmoid_derivative(saida)
+
+        wo1 = wo1 + (h1 * delta * taxa)
+        wo2 = wo2 + (h2 * delta * taxa)
+        wo3 = wo3 + (h3 * delta * taxa)
+        bo = bo + (delta * taxa)
+
+        # Exemplo 4: [1, 1] -> 0
+        in1 = 1
+        in2 = 1
+        desejado = 0
+
+        h1 = neuronio_calc(in1, in2, w11, w12, b1)
+        h2 = neuronio_calc(in1, in2, w21, w22, b2)
+        h3 = neuronio_calc(in1, in2, w31, w32, b3)
+        saida = camada_saida_calc(h1, h2, h3, wo1, wo2, wo3, bo)
+
+        erro = desejado - saida
+        delta = erro * sigmoid_derivative(saida)
+
+        wo1 = wo1 + (h1 * delta * taxa)
+        wo2 = wo2 + (h2 * delta * taxa)
+        wo3 = wo3 + (h3 * delta * taxa)
+        bo = bo + (delta * taxa)
+
+    print("Treinamento concluido!")
+    print("Testando rede neural:")
+
+    # Teste [0, 0] -> esperado: 0
+    in1 = 0
+    in2 = 0
+    h1 = neuronio_calc(in1, in2, w11, w12, b1)
+    h2 = neuronio_calc(in1, in2, w21, w22, b2)
+    h3 = neuronio_calc(in1, in2, w31, w32, b3)
+    saida = camada_saida_calc(h1, h2, h3, wo1, wo2, wo3, bo)
+    print("Input: 0 0 Output:", saida)
+
+    # Teste [0, 1] -> esperado: 1
+    in1 = 0
+    in2 = 1
+    h1 = neuronio_calc(in1, in2, w11, w12, b1)
+    h2 = neuronio_calc(in1, in2, w21, w22, b2)
+    h3 = neuronio_calc(in1, in2, w31, w32, b3)
+    saida = camada_saida_calc(h1, h2, h3, wo1, wo2, wo3, bo)
+    print("Input: 0 1 Output:", saida)
+
+    # Teste [1, 0] -> esperado: 1
+    in1 = 1
+    in2 = 0
+    h1 = neuronio_calc(in1, in2, w11, w12, b1)
+    h2 = neuronio_calc(in1, in2, w21, w22, b2)
+    h3 = neuronio_calc(in1, in2, w31, w32, b3)
+    saida = camada_saida_calc(h1, h2, h3, wo1, wo2, wo3, bo)
+    print("Input: 1 0 Output:", saida)
+
+    # Teste [1, 1] -> esperado: 0
+    in1 = 1
+    in2 = 1
+    h1 = neuronio_calc(in1, in2, w11, w12, b1)
+    h2 = neuronio_calc(in1, in2, w21, w22, b2)
+    h3 = neuronio_calc(in1, in2, w31, w32, b3)
+    saida = camada_saida_calc(h1, h2, h3, wo1, wo2, wo3, bo)
+    print("Input: 1 1 Output:", saida)
+
+    print("Fim do teste!")
