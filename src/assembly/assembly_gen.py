@@ -1,14 +1,9 @@
 import re
 
+
 class AssemblyGenerator:
     """
-    Gera código Assembly ARMv7 a partir de Código de 3 Endereços (C3E).
-    Suporte a:
-      - Loops, comparações, funções
-      - Comparações de strings reais
-      - Send/Receive de canais (aloca variáveis, nop)
-      - Declaração de canais como comentários
-      - Diferenciação básica entre int e float (literals) com pool .double e instruções VFP
+    Gera código Assembly ARMv7 compatível com CPUlator.
     """
 
     FLOAT_RE = re.compile(r"^-?\d+\.\d+([eE][+-]?\d+)?$")
@@ -34,13 +29,9 @@ class AssemblyGenerator:
         self.max_stack_used = 0
         self.stack_vars = []
 
-        # Float constants pool: normalized_value_str -> label
         self.float_consts = {}
         self.float_counter = 0
 
-    # -------------------------
-    # UTILITÁRIOS
-    # -------------------------
     def emit(self, instr):
         self.asm_code.append(f"    {instr}")
 
@@ -71,28 +62,23 @@ class AssemblyGenerator:
         s = str(s)
         if self.INT_RE.match(s):
             return s + ".0"
-        # already float-like or contains decimal/exponent
         return s
 
     def get_float_label(self, value_str):
-        # normalize value_str to stable representation (ex: "2" -> "2.0")
         s = self._normalize_float_str(value_str)
         if s not in self.float_consts:
             lbl = f".LCF{self.float_counter}"
             self.float_counter += 1
             self.float_consts[s] = lbl
-            # store as double in data section
-            self.data_section.append(f"{lbl}: .double {s}")
+            self.data_section.append(f"{lbl}: .word 0x{self.float_to_hex(float(s))}")
         return self.float_consts[s]
 
+    def float_to_hex(self, f):
+        """Converte float para representação hexadecimal IEEE 754"""
+        import struct
+        return struct.pack('>f', f).hex()
+
     def get_location(self, operand):
-        """
-        Retorna:
-          - '#<int>' para inteiros/imediatos
-          - '.STRn' para strings (label)
-          - '.LCFn' para literais float (label)
-          - '[fp, #offset]' para variáveis alocadas
-        """
         if isinstance(operand, str):
             clean_operand = operand.lstrip('-').replace('.', '', 1)
             if self.is_float_literal(operand):
@@ -119,96 +105,24 @@ class AssemblyGenerator:
         self.data_section.append(f"{label}: .asciz \"{clean_string}\"")
         return label
 
-    def reg_to_dreg(self, reg):
-        # mapeia r0->d0, r1->d1, r2->d2, r3->d3, r4->d4 etc.
-        m = re.match(r"r(\d+)$", reg)
-        if m:
-            idx = int(m.group(1))
-            return f"d{idx}"
-        # se já for um d-reg, retorna direto
-        if re.match(r"d\d+$", reg):
-            return reg
-        # fallback
-        return "d0"
-
-    # --- Helper: carrega double via 32-bit literal load + vldr [tmp] ---
-    def _load_double_via_ldr(self, label, dreg, tmp_reg="r12"):
-        # usa ldr tmp_reg, =label  ; vldr dreg, [tmp_reg]
-        # evita pseudo-instrução `vldr dX, =label` que causa "invalid type for literal pool"
-        self.emit(f"ldr {tmp_reg}, ={label}")
-        self.emit(f"vldr {dreg}, [{tmp_reg}]")
-
     def load_to_register(self, operand, reg):
-        """
-        Carrega operand para reg.
-        reg pode ser um registrador inteiro (r0..) ou VFP (d0..).
-        Se operand for float literal, usa pool .double e carregamento seguro.
-        """
-        loc = None
-        if isinstance(operand, str) and (operand.startswith(".LCF") or operand.startswith(".STR") or operand.startswith("[")):
-            loc = operand
-        else:
-            loc = self.get_location(operand)
+        loc = self.get_location(operand) if not isinstance(operand, str) or not operand.startswith('[') else operand
 
-        # destino VFP (d-reg)
-        if reg.startswith('d'):
-            if loc.startswith('.LCF'):
-                # carregar double usando helper seguro
-                self._load_double_via_ldr(loc, reg)
-            elif loc.startswith('['):
-                # load double from memory (stack variable)
-                self.emit(f"vldr {reg}, {loc}")
-            elif loc.startswith('#'):
-                # imediato inteiro -> criar constant double e carregar
-                val = loc.lstrip('#')
-                lbl = self.get_float_label(f"{val}.0")
-                self._load_double_via_ldr(lbl, reg)
-            elif loc.startswith('.STR'):
-                # não faz sentido carregar string para float/reg; carregar endereço em r12 e deixar comentário
-                self.emit(f"ldr r12, ={loc}")
-                self.emit_comment(f"carregado endereço de string {loc} em r12; conversão para float não implementada")
-            else:
-                # possivelmente já um label -> usar helper
-                self._load_double_via_ldr(loc, reg)
-            return
-
-        # destino inteiro reg
         if loc.startswith('#'):
-            self.emit(f"mov {reg}, {loc}")
-        elif loc.startswith('.STR'):
+            val = int(loc.lstrip('#'))
+            if val >= 0 and val < 256:
+                self.emit(f"mov {reg}, {loc}")
+            else:
+                self.emit(f"ldr {reg}, ={val}")
+        elif loc.startswith('.STR') or loc.startswith('.LCF'):
             self.emit(f"ldr {reg}, ={loc}")
-        elif loc.startswith('.LCF'):
-            # carregar double para d-reg mapeado ao reg (sem conversão automática)
-            dreg = self.reg_to_dreg(reg)
-            self._load_double_via_ldr(loc, dreg)
-            self.emit_comment(f"Nota: {loc} carregado em {dreg} (origem float); conversão explícita para inteiro não realizada")
         elif loc.startswith('['):
             self.emit(f"ldr {reg}, {loc}")
         else:
-            # label into integer reg (address)
             self.emit(f"ldr {reg}, ={loc}")
 
     def store_from_register(self, reg, dest):
-        """
-        Armazena reg para dest. reg pode ser rX ou dX.
-        dest tipicamente é uma pilha '[fp, #..]' ou rX (menos comum).
-        """
         loc = self.get_location(dest)
-        if reg.startswith('d'):
-            # store double
-            if loc.startswith('['):
-                self.emit(f"vstr {reg}, {loc}")
-            else:
-                # se dest for label ou imediato, armazenar endereço não faz sentido; tentamos guardar endereço se for string
-                if loc.startswith('.STR'):
-                    # armazena endereço em r12 e depois (não usual) - fallback
-                    self.emit(f"ldr r12, ={loc}")
-                    self.emit(f"str r12, {loc}")
-                else:
-                    self.emit_comment(f"store_from_register: armazenamento float para {loc} não suportado diretamente")
-            return
-
-        # inteiro
         if loc.startswith('['):
             self.emit(f"str {reg}, {loc}")
         else:
@@ -227,15 +141,11 @@ class AssemblyGenerator:
         self.max_stack_used = 0
         self.stack_vars = []
 
-    # -------------------------
-    # GERAÇÃO
-    # -------------------------
     def generate(self, c3e_instructions):
         self.emit_comment("Código gerado pelo compilador GigaPar2025")
-        self.emit_comment("Arquitetura: ARMv7")
+        self.emit_comment("Arquitetura: ARMv7 - Compatível com CPUlator")
         self.asm_code.append("")
 
-        # Adiciona função de comparação de strings
         self.add_string_compare_func()
 
         for instr in c3e_instructions:
@@ -252,7 +162,7 @@ class AssemblyGenerator:
             self.emit_label(instr.rstrip(':'))
             return
 
-        if '=' in instr and not any(x in instr for x in ['==','!=','<=','>=']):
+        if '=' in instr and not any(x in instr for x in ['==', '!=', '<=', '>=']):
             self.handle_assignment(instr)
             return
 
@@ -286,12 +196,9 @@ class AssemblyGenerator:
         if parts[0] == "receive":
             self.handle_receive(instr)
             return
-
         if "channel_decl" in instr:
             self.handle_channel_decl(instr)
             return
-
-        # Suporte a blocos paralelos e sequenciais como comentários
         if "BEGIN_PARALLEL" in instr:
             self.emit_comment("INÍCIO DE BLOCO PARALELO")
             return
@@ -307,155 +214,97 @@ class AssemblyGenerator:
 
         self.emit_comment(f"Instrução C3E não reconhecida: {instr}")
 
-    # -------------------------
-    # HANDLERS
-    # -------------------------
     def handle_assignment(self, instr):
-        left, right = instr.split('=',1)
+        left, right = instr.split('=', 1)
         dest = left.strip()
         right = right.strip()
 
         # Comparação de strings
-        if '"' in right:
-            # Se for uma comparação de strings "=="
-            if '==' in right:
-                lhs, rhs = right.split('==')
+        if '"' in right and '==' in right:
+            lhs, rhs = right.split('==')
+            lhs = lhs.strip()
+            rhs = rhs.strip()
+            lhs_loc = self.get_location(lhs)
+            rhs_loc = self.get_location(rhs)
+            dest_loc = self.allocate_stack_var(dest)
+            self.emit_comment(f"Comparação de strings: {lhs} == {rhs}")
+            self.emit(f"ldr r0, ={lhs_loc}")
+            self.emit(f"ldr r1, ={rhs_loc}")
+            self.emit(f"ldr r2, ={dest_loc}")
+            self.emit(f"bl {self.string_compare_label}")
+            return
+        elif '"' in right:
+            self.load_to_register(right, 'r0')
+            self.store_from_register('r0', dest)
+            return
+
+        # Operações aritméticas
+        for op in ['+', '-', '*', '/']:
+            if op in right:
+                lhs, rhs = right.split(op, 1)
                 lhs = lhs.strip()
                 rhs = rhs.strip()
-                lhs_loc = self.get_location(lhs)
-                rhs_loc = self.get_location(rhs)
-                dest_loc = self.allocate_stack_var(dest)
-                self.emit_comment(f"Comparação de strings real: {lhs} == {rhs}")
-                self.emit(f"ldr r0, ={lhs_loc}")
-                self.emit(f"ldr r1, ={rhs_loc}")
-                self.emit(f"ldr r2, ={dest_loc}")
-                self.emit(f"bl {self.string_compare_label}")
-                return
-            else:
-                # apenas atribuição de string
-                self.load_to_register(right, 'r0')
+
+                self.load_to_register(lhs, 'r0')
+                self.load_to_register(rhs, 'r1')
+
+                if op == '+':
+                    self.emit("add r0, r0, r1")
+                elif op == '-':
+                    self.emit("sub r0, r0, r1")
+                elif op == '*':
+                    self.emit("mul r0, r0, r1")
+                elif op == '/':
+                    # Divisão inteira simples
+                    self.emit("mov r2, #0")
+                    div_label = f".L_div_{len(self.asm_code)}"
+                    done_label = f".L_div_done_{len(self.asm_code)}"
+                    self.emit_label(div_label)
+                    self.emit("cmp r0, r1")
+                    self.emit(f"blt {done_label}")
+                    self.emit("sub r0, r0, r1")
+                    self.emit("add r2, r2, #1")
+                    self.emit(f"b {div_label}")
+                    self.emit_label(done_label)
+                    self.emit("mov r0, r2")
+
                 self.store_from_register('r0', dest)
                 return
 
-        # Expressão aritmética: detectar se há floats literais
-        for op in ['+', '-', '*', '/']:
+        # Comparações
+        for op in ['<=', '>=', '==', '!=', '<', '>']:
             if op in right:
-                lhs, rhs = right.split(op,1)
+                lhs, rhs = right.split(op, 1)
                 lhs = lhs.strip()
                 rhs = rhs.strip()
 
-                float_mode = self.is_float_literal(lhs) or self.is_float_literal(rhs)
+                self.load_to_register(lhs, 'r0')
+                self.load_to_register(rhs, 'r1')
+                self.emit("cmp r0, r1")
 
-                if float_mode:
-                    # carregar ambos em d-regs (d0,d1)
-                    self.load_to_register(lhs, 'd0')
-                    # se rhs for inteiro literal, convertê-lo criando float constant
-                    if self.is_float_literal(rhs):
-                        self.load_to_register(rhs, 'd1')
-                    else:
-                        rhs_loc = self.get_location(rhs)
-                        if isinstance(rhs_loc, str) and rhs_loc.startswith('#'):
-                            val = rhs_loc.lstrip('#')
-                            lbl = self.get_float_label(f"{val}.0")
-                            self.load_to_register(lbl, 'd1')
-                        else:
-                            self.load_to_register(rhs, 'd1')
+                if op == '<':
+                    self.emit("movlt r0, #1")
+                    self.emit("movge r0, #0")
+                elif op == '>':
+                    self.emit("movgt r0, #1")
+                    self.emit("movle r0, #0")
+                elif op == '<=':
+                    self.emit("movle r0, #1")
+                    self.emit("movgt r0, #0")
+                elif op == '>=':
+                    self.emit("movge r0, #1")
+                    self.emit("movlt r0, #0")
+                elif op == '==':
+                    self.emit("moveq r0, #1")
+                    self.emit("movne r0, #0")
+                elif op == '!=':
+                    self.emit("movne r0, #1")
+                    self.emit("moveq r0, #0")
 
-                    op_map = {'+': 'vadd.f64', '-': 'vsub.f64', '*': 'vmul.f64', '/': 'vdiv.f64'}
-                    instr = op_map.get(op)
-                    if not instr:
-                        raise ValueError("op não suportada para float: " + op)
-                    self.emit(f"{instr} d0, d0, d1")
-                    self.store_from_register('d0', dest)
-                else:
-                    # inteiro, comportamento original
-                    self.load_to_register(lhs, 'r0')
-                    self.load_to_register(rhs, 'r1')
-                    if op == '+':
-                        self.emit("add r0, r0, r1")
-                    elif op == '-':
-                        self.emit("sub r0, r0, r1")
-                    elif op == '*':
-                        # ARM mul rd, rn, rm  -> rd = rn * rm (syntax varies); aqui usamos mul r0, r0, r1
-                        self.emit("mul r0, r0, r1")
-                    elif op == '/':
-                        div_label = f".L_div_{len(self.asm_code)}"
-                        done_label = f".L_div_done_{len(self.asm_code)}"
-                        self.emit("mov r2, #0")
-                        self.emit(f"{div_label}:")
-                        self.emit("cmp r0, r1")
-                        self.emit(f"blt {done_label}")
-                        self.emit("sub r0, r0, r1")
-                        self.emit("add r2, r2, #1")
-                        self.emit(f"b {div_label}")
-                        self.emit(f"{done_label}:")
-                        self.emit("mov r0, r2")
-                    self.store_from_register('r0', dest)
+                self.store_from_register('r0', dest)
                 return
 
-        # Comparações (inclui floats)
-        for op in ['<', '>', '<=', '>=', '==', '!=']:
-            if op in right:
-                lhs, rhs = right.split(op,1)
-                lhs = lhs.strip()
-                rhs = rhs.strip()
-
-                float_mode = self.is_float_literal(lhs) or self.is_float_literal(rhs)
-
-                if float_mode:
-                    # carregar em d0,d1
-                    self.load_to_register(lhs, 'd0')
-                    self.load_to_register(rhs, 'd1')
-                    # comparar floats
-                    self.emit("vcmp.f64 d0, d1")
-                    self.emit("vmrs APSR_nzcv, FPSCR")
-                    # usar mov condicional para resultado em r0
-                    if op == '<':
-                        self.emit("movlt r0, #1")
-                        self.emit("movge r0, #0")
-                    elif op == '>':
-                        self.emit("movgt r0, #1")
-                        self.emit("movle r0, #0")
-                    elif op == '<=':
-                        self.emit("movle r0, #1")
-                        self.emit("movgt r0, #0")
-                    elif op == '>=':
-                        self.emit("movge r0, #1")
-                        self.emit("movlt r0, #0")
-                    elif op == '==':
-                        self.emit("moveq r0, #1")
-                        self.emit("movne r0, #0")
-                    elif op == '!=':
-                        self.emit("movne r0, #1")
-                        self.emit("moveq r0, #0")
-                    self.store_from_register('r0', dest)
-                else:
-                    # inteiro
-                    self.load_to_register(lhs, 'r0')
-                    self.load_to_register(rhs, 'r1')
-                    self.emit("cmp r0, r1")
-                    if op == '<':
-                        self.emit("movlt r0, #1")
-                        self.emit("movge r0, #0")
-                    elif op == '>':
-                        self.emit("movgt r0, #1")
-                        self.emit("movle r0, #0")
-                    elif op == '<=':
-                        self.emit("movle r0, #1")
-                        self.emit("movgt r0, #0")
-                    elif op == '>=':
-                        self.emit("movge r0, #1")
-                        self.emit("movlt r0, #0")
-                    elif op == '==':
-                        self.emit("moveq r0, #1")
-                        self.emit("movne r0, #0")
-                    elif op == '!=':
-                        self.emit("movne r0, #1")
-                        self.emit("moveq r0, #0")
-                    self.store_from_register('r0', dest)
-                return
-
-        # simples atribuição
+        # Atribuição simples
         self.load_to_register(right, 'r0')
         self.store_from_register('r0', dest)
 
@@ -497,7 +346,7 @@ class AssemblyGenerator:
             self.allocate_stack_var(parts[1])
 
     def handle_call(self, instr):
-        left, right = instr.split('=',1)
+        left, right = instr.split('=', 1)
         result = left.strip()
         parts = right.strip().split()
         func_name = parts[1].rstrip(',')
@@ -526,12 +375,18 @@ class AssemblyGenerator:
 
     def handle_get_param(self, parts):
         if len(parts) >= 2:
-            self.allocate_stack_var(parts[1])
+            param_name = parts[1]
+            self.allocate_stack_var(param_name)
+            # Assume que parâmetros vêm em r0, r1, r2, r3
+            if self.param_count < 4:
+                self.emit(f"str r{self.param_count}, {self.var_locations[param_name]}")
+                self.param_count += 1
 
     def handle_return(self, parts):
         if len(parts) > 1:
             self.load_to_register(parts[1], 'r0')
-        self.emit("b .return_exit")
+        self.emit("add sp, sp, #256")
+        self.emit("pop {fp, pc}")
 
     def handle_send(self, instr):
         self.emit_comment(f"Operação de envio: {instr}")
@@ -550,30 +405,28 @@ class AssemblyGenerator:
     def handle_channel_decl(self, instr):
         self.emit_comment(f"Declaração de canal ignorada: {instr}")
 
-    # -------------------------
-    # MONTAGEM FINAL
-    # -------------------------
     def assemble_final_code(self):
         final_code = []
         final_code.append('.arch armv7-a')
         final_code.append('.arm')
         final_code.append('')
+
         if self.data_section:
             final_code.append('.section .data')
             final_code.extend(self.data_section)
             final_code.append('')
+
         final_code.append('.section .text')
         final_code.append('.global _start')
         final_code.append('.global main')
         final_code.append('')
+
         final_code.append('_start:')
-        final_code.append('    ldr sp, =0x8000')
+        final_code.append('    ldr sp, =0x80000')
         final_code.append('    bl main')
-        final_code.append('    b .')
+        final_code.append('_halt:')
+        final_code.append('    b _halt')
         final_code.append('')
-        final_code.append('.return_exit:')
-        final_code.append('    mov sp, fp')
-        final_code.append('    pop {fp, pc}')
-        final_code.append('')
+
         final_code.extend(self.asm_code)
         return "\n".join(final_code)
