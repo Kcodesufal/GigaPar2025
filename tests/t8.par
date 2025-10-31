@@ -1,2 +1,63 @@
-# PRECISAMOS IMPLEMENTAR ARRAYS! 😭
+# tests/t8.par
+# Quicksort iterativo (não recursivo) para um array de 5 elementos
+# Implementado apenas com funções e arrays
 
+function swap(arr, i, j)
+    tmp = arr[i]
+    arr[i] = arr[j]
+    arr[j] = tmp
+end
+
+function partition(arr, start, end)
+    pivot = arr[end]
+    i = start - 1
+    j = start
+    while j < end
+        if arr[j] <= pivot
+            i = i + 1
+            swap(arr, i, j)
+        end
+        j = j + 1
+    end
+    i = i + 1
+    swap(arr, i, end)
+    return i
+end
+
+function quicksort_iterativo(arr, n)
+    # uso de pilha simples por arrays paralelos starts/ends
+    max_size = n * 2
+    starts = [0]    # inicialmente contém um par (0, n-1)
+    ends   = [n - 1]
+    top = 1
+
+    while top > 0
+        top = top - 1
+        start = starts[top]
+        end   = ends[top]
+
+        if start >= end
+            # nada a fazer para subarray vazio/único
+            continue
+        end
+
+        p = partition(arr, start, end)
+
+        # empilha esquerda (start, p-1)
+        starts[top] = start
+        ends[top]   = p - 1
+        top = top + 1
+
+        # empilha direita (p+1, end)
+        starts[top] = p + 1
+        ends[top]   = end
+        top = top + 1
+    end
+end
+
+function main()
+    array = [33, 12, 98, 5, 61]
+    quicksort_iterativo(array, 5)
+    print("Array ordenado:")
+    print(array)
+end
